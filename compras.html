@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles Criss & más | Regalos Personalizados</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-pink: #fc5da5;
+            --primary-hover: #e0488f;
+            --soft-pink: #fff0f6;
+            --accent-pink: #ffd6e7;
+            --dark-text: #333333;
+            --light-bg: #fcf8fa;
+            --white: #ffffff;
+            --shadow: 0 8px 25px rgba(252, 93, 165, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+            line-height: 1.6;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* FONDO BLUR/DIFUMINADO DEL LOGO */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: url('Logotipo.jpg') center/contain no-repeat;
+            filter: blur(35px);
+            opacity: 0.18;
+            z-index: -1;
+            pointer-events: none;
+            transform: scale(1.1);
+        }
+
+        /* ANIMACIONES */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(252, 93, 165, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(252, 93, 165, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(252, 93, 165, 0); }
+        }
+
+        /* HEADER */
+        header {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 2rem;
+        }
+
+        .logo-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--primary-pink);
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+
+        .logo-nav img {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 1.8rem;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--dark-text);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-menu a:hover {
+            color: var(--primary-pink);
+        }
+
+        /* HERO SECTION */
+        .hero {
+            padding: 4rem 2rem 3rem;
+            text-align: center;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .hero-logo-main {
+            max-width: 800px;
+            margin: 0 auto;
+            border-radius: 50%;
+            box-shadow: var(--shadow);
+            animation: float 4s ease-in-out infinite;
+            margin-bottom: 1.5rem;
+            object-fit: cover;
+            border: 4px solid var(--white);
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.8rem;
+            color: var(--primary-pink);
+            margin-bottom: 0.5rem;
+        }
+
+        .hero p {
+            font-size: 1.15rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-pink);
+            color: var(--white);
+            padding: 0.85rem 2.2rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            animation: pulseGlow 2s infinite;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-3px) scale(1.02);
+        }
+
+        /* CATÁLOGO */
+        .catalog-container {
+            max-width: 1200px;
+            margin: 2rem auto 4rem;
+            padding: 0 2rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 2.3rem;
+            margin-bottom: 2rem;
+            color: var(--dark-text);
+        }
+
+        .filter-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-bottom: 2.5rem;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid var(--primary-pink);
+            color: var(--primary-pink);
+            padding: 0.5rem 1.3rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn.active, .filter-btn:hover {
+            background: var(--primary-pink);
+            color: var(--white);
+            transform: translateY(-2px);
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            backdrop-filter: blur(5px);
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(252, 93, 165, 0.25);
+        }
+
+        .product-img {
+            width: 100%;
+            height: 210px;
+            background: var(--soft-pink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-pink);
+            font-weight: 600;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .product-info {
+            padding: 1.3rem;
+            text-align: center;
+        }
+
+        .product-title {
+            font-size: 1.15rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-price {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--primary-pink);
+            margin-bottom: 1rem;
+        }
+
+        /* SECCIÓN PASOS */
+        .steps-section {
+            background: rgba(255, 240, 246, 0.7);
+            padding: 3rem 2rem;
+            margin: 3rem 0;
+            backdrop-filter: blur(5px);
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .step-card {
+            background: var(--white);
+            padding: 1.8rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+        }
+
+        .step-card:hover {
+            transform: scale(1.03);
+        }
+
+        .step-number {
+            background: var(--primary-pink);
+            color: var(--white);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-weight: 700;
+        }
+
+        /* MODAL DE PEDIDO */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 480px;
+            width: 100%;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 1.6rem;
+            cursor: pointer;
+            color: #888;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--primary-pink);
+        }
+
+        .form-group {
+            margin-bottom: 1.1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            border-color: var(--primary-pink);
+        }
+
+        /* FOOTER */
+        footer {
+            background: #222;
+            color: var(--white);
+            padding: 2.5rem 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.8rem;
+            margin: 1.5rem 0;
+        }
+
+        .social-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .social-links a:hover {
+            color: var(--primary-pink);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="nav-container">
+            <a href="#" class="logo-nav">
+                <img src="Logotipo.jpg" alt="Logo">
+                <span>Detalles Criss & más</span>
+            </a>
+            <ul class="nav-menu">
+                <li><a href="#catalogo">Catálogo</a></li>
+                <li><a href="#como-pedir">Cómo Pedir</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <section class="hero">
+        <img src="Logotipo.jpg" alt="Detalles Criss & más" class="hero-logo-main">
+        <h1>Detalles que enamoran</h1>
+        <p>Recuerdos que perduran. Regalos hechos a mano, chocotejas, cuadros personalizados y sorpresas únicas.</p>
+        <a href="#catalogo" class="btn-primary">Ver Catálogo</a>
+    </section>
+
+    <section class="catalog-container" id="catalogo">
+        <h2 class="section-title">Nuestros Detalles</h2>
+        
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterProducts('todos')">Todos</button>
+            <button class="filter-btn" onclick="filterProducts('cuadros')">Cuadros Personalizados</button>
+            <button class="filter-btn" onclick="filterProducts('chocotejas')">Chocotejas</button>
+            <button class="filter-btn" onclick="filterProducts('sorpresa')">Regalos Sorpresa</button>
+            <button class="filter-btn" onclick="filterProducts('arreglos')">Arreglos a Mano</button>
+            <button class="filter-btn" onclick="filterProducts('juguetes')">Juguetes y Peluches</button>
+        </div>
+
+        <div class="products-grid" id="grid-productos"></div>
+    </section>
+
+    <section class="steps-section" id="como-pedir">
+        <h2 class="section-title">¿Cómo realizar tu pedido?</h2>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Elige tu detalle</h3>
+                <p>Selecciona tu producto favorito de nuestro catálogo.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Personalízalo</h3>
+                <p>Agrega nombres, fotos o dedicatorias especiales.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Genera tu Boleta</h3>
+                <p>Envía tu pedido a nuestro WhatsApp listo para procesar.</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="modal" id="modalPedido">
+        <div class="modal-content">
+            <span class="close-btn" onclick="cerrarModal()">&times;</span>
+            <h3 style="color: var(--primary-pink); margin-bottom: 1rem;" id="modalProductoNombre">Personaliza tu Pedido</h3>
+            <form id="formPedido" onsubmit="generarBoletaWhatsApp(event)">
+                <input type="hidden" id="productoSeleccionado">
+                <input type="hidden" id="precioSeleccionado">
+                
+                <div class="form-group">
+                    <label>Tu Nombre Completo:*</label>
+                    <input type="text" id="clienteNombre" required placeholder="Ej. María López">
+                </div>
+                <div class="form-group">
+                    <label>Nombre(s) para personalizar:*</label>
+                    <input type="text" id="personalizarNombre" required placeholder="Ej. Carlos / Feliz Aniversario">
+                </div>
+                <div class="form-group">
+                    <label>Dedicatoria o Mensaje Especial:</label>
+                    <textarea id="dedicatoria" rows="3" placeholder="Mensaje para la tarjeta..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>¿Adjuntarás foto por chat?:</label>
+                    <select id="adjuntaFoto">
+                        <option value="Sí, enviaré la foto por el chat">Sí, enviaré la foto al WhatsApp</option>
+                        <option value="No requiere foto">No requiere foto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Método de Entrega:*</label>
+                    <select id="metodoEntrega">
+                        <option value="Retiro en Tienda Física">Retiro en Tienda Física</option>
+                        <option value="Envío a Domicilio">Envío a Domicilio</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; border-radius: 12px; margin-top: 0.5rem;">Enviar Boleta por WhatsApp</button>
+            </form>
+        </div>
+    </div>
+
+    <footer id="contacto">
+        <h3>Detalles Criss & más</h3>
+        <p style="font-size: 0.9rem; color: #ccc;">Detalles que enamoran, recuerdos que perduran</p>
+        <div class="social-links">
+            <a href="https://instagram.com" target="_blank">Instagram</a>
+            <a href="https://tiktok.com" target="_blank">TikTok</a>
+            <a href="https://wa.me/51900000000" target="_blank">WhatsApp Directo</a>
+        </div>
+        <p style="font-size: 0.8rem; color: #777;">&copy; 2026 Detalles Criss & más. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+        const productos = [
+            { id: 1, nombre: "Cuadro Fotográfico Personalizado", categoria: "cuadros", precio: 45.00 },
+            { id: 2, nombre: "Caja de Chocotejas Artesanales", categoria: "chocotejas", precio: 30.00 },
+            { id: 3, nombre: "Box Sorpresa Especial", categoria: "sorpresa", precio: 85.00 },
+            { id: 4, nombre: "Arreglo Floral Hecho a Mano", categoria: "arreglos", precio: 60.00 },
+            { id: 5, nombre: "Peluche + Detalle Personalizado", categoria: "juguetes", precio: 55.00 },
+            { id: 6, nombre: "Detalle Tallado Personalizado", categoria: "cuadros", precio: 40.00 }
+        ];
+
+        const numeroWhatsApp = "51900000000"; // Reemplazar con tu número de WhatsApp real
+
+        function renderProductos(lista) {
+            const grid = document.getElementById('grid-productos');
+            grid.innerHTML = '';
+            lista.forEach(p => {
+                grid.innerHTML += `
+                    <div class="product-card">
+                        <div class="product-img">[ ${p.nombre} ]</div>
+                        <div class="product-info">
+                            <h3 class="product-title">${p.nombre}</h3>
+                            <div class="product-price">S/ ${p.precio.toFixed(2)}</div>
+                            <button class="btn-primary" onclick="abrirModal('${p.nombre}', ${p.precio})">Personalizar</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterProducts(cat) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            if (cat === 'todos') {
+                renderProductos(productos);
+            } else {
+                renderProductos(productos.filter(p => p.categoria === cat));
+            }
+        }
+
+        function abrirModal(nombre, precio) {
+            document.getElementById('modalProductoNombre').innerText = `Personalizar: ${nombre}`;
+            document.getElementById('productoSeleccionado').value = nombre;
+            document.getElementById('precioSeleccionado').value = precio;
+            document.getElementById('modalPedido').style.display = 'flex';
+        }
+
+        function cerrarModal() {
+            document.getElementById('modalPedido').style.display = 'none';
+        }
+
+        function generarBoletaWhatsApp(e) {
+            e.preventDefault();
+            const producto = document.getElementById('productoSeleccionado').value;
+            const precio = document.getElementById('precioSeleccionado').value;
+            const cliente = document.getElementById('clienteNombre').value;
+            const personalizacion = document.getElementById('personalizarNombre').value;
+            const dedicatoria = document.getElementById('dedicatoria').value || "Sin dedicatoria";
+            const entrega = document.getElementById('metodoEntrega').value;
+            const tieneFoto = document.getElementById('adjuntaFoto').value;
+
+            const mensaje = 
+`🧾 *BOLETA / RESUMEN DE PEDIDO* 🧾
+*Detalles Criss & más*
+----------------------------------
+👤 *Cliente:* ${cliente}
+🎁 *Producto:* ${producto}
+💰 *Total:* S/ ${parseFloat(precio).toFixed(2)}
+🚚 *Entrega:* ${entrega}
+----------------------------------
+✏️ *Personalizado:* ${personalizacion}
+💌 *Dedicatoria:* ${dedicatoria}
+📸 *Foto:* ${tieneFoto}
+----------------------------------
+¡Hola! Quisiera realizar este pedido.`;
+
+            window.open(`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`, '_blank');
+            cerrarModal();
+        }
+
+        renderProductos(productos);
+    </script>
+</body>
+</html>
