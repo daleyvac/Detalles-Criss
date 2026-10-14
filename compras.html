@@ -928,6 +928,8 @@
     <script>
         // ===== CATALOGO DINAMICO (editable por el Administrador, persistido en localStorage) =====
         const KEY_CATALOGO = 'criss_catalogo_v1';
+        const KEY_CARRITO = 'criss_carrito_v1';
+        const KEY_PEDIDOS = 'criss_pedidos_v1';
 
         let categorias = [
             { id: "cuadros", nombre: "Cuadros Personalizados" },
@@ -972,6 +974,14 @@
 
         let modoAdministrador = false; // false = Cliente (estado inicial automatico)
         let pedidosRegistrados = [];
+        try {
+            const guardadoPedidos = JSON.parse(localStorage.getItem(KEY_PEDIDOS));
+            if (Array.isArray(guardadoPedidos)) pedidosRegistrados = guardadoPedidos;
+        } catch (e) { /* sin pedidos guardados */ }
+
+        function guardarPedidos() {
+            localStorage.setItem(KEY_PEDIDOS, JSON.stringify(pedidosRegistrados));
+        }
 
         function abrirModalLogin(rol = 'administrador') {
             document.getElementById('loginRol').value = rol;
@@ -1084,6 +1094,7 @@
             }
             prod.precio = precio;
             guardarCatalogo();
+            sincronizarCarrito(); // el carrito muestra de inmediato el nuevo precio
             renderTablaProductosAdmin();
             renderProductos(productos);
         }
@@ -1164,7 +1175,8 @@
         function eliminarProducto(id) {
             const idx = productos.findIndex(p => p.id === id);
             if (idx > -1) productos.splice(idx, 1);
-            carrito = carrito.filter(c => c.id !== id); // limpiar del carrito si estaba
+            window.carrito = window.carrito.filter(c => c.id !== id); // limpiar del carrito si estaba
+            guardarCarrito(); // persiste el carrito sin el producto eliminado
             renderCarrito();
             guardarCatalogo();
             renderTablaProductosAdmin();
@@ -1190,11 +1202,24 @@
 
         function confirmarPedido(i) {
             pedidosRegistrados[i].estado = 'Confirmado';
+            guardarPedidos();
             renderTablaPedidosAdmin();
         }
 
-        function registrarPedido(cliente, producto, precio, entrega) {
-            pedidosRegistrados.push({ cliente, producto, precio, entrega, estado: 'Pendiente' });
+        // Registra la compra como UN solo pedido consolidado (todos los items y el total real)
+        function registrarPedido(cliente, items, total, entrega, personalizacion, dedicatoria) {
+            const detalle = items.map(c => `${c.nombre} x${c.cantidad}`).join(', ');
+            pedidosRegistrados.push({
+                cliente,
+                producto: detalle,
+                precio: total,
+                entrega,
+                personalizacion: personalizacion || '',
+                dedicatoria: dedicatoria || '',
+                fecha: new Date().toLocaleString(),
+                estado: 'Pendiente'
+            });
+            guardarPedidos();
             if (modoAdministrador) renderTablaPedidosAdmin();
         }
 
@@ -1231,57 +1256,85 @@
             }
         }
 
-        // ===== CARRITO DE COMPRAS =====
-        let carrito = []; // [{ id, nombre, precio, cantidad }]
+        // ===== CARRITO DE COMPRAS (persistido en localStorage) =====
+        window.carrito = []; // [{ id, nombre, precio, cantidad }]
+        try {
+            const guardadoCarrito = JSON.parse(localStorage.getItem(KEY_CARRITO));
+            if (Array.isArray(guardadoCarrito)) window.carrito = guardadoCarrito;
+        } catch (e) { /* sin carrito guardado */ }
+
+        function guardarCarrito() {
+            localStorage.setItem(KEY_CARRITO, JSON.stringify(window.carrito));
+        }
+
+        // Sincroniza el carrito con el catalogo vigente (el admin pudo cambiar precios/nombres o eliminar productos)
+        function sincronizarCarrito() {
+            window.carrito = window.carrito.filter(c => productos.some(p => p.id === c.id));
+            window.carrito.forEach(c => {
+                const prod = productos.find(p => p.id === c.id);
+                c.precio = prod.precio;
+                c.nombre = prod.nombre;
+            });
+            guardarCarrito();
+        }
 
         function agregarAlCarrito(id) {
             const prod = productos.find(p => p.id === id);
             if (!prod) return;
-            const item = carrito.find(c => c.id === id);
+            const item = window.carrito.find(c => c.id === id);
             if (item) {
                 item.cantidad++;
                 item.precio = prod.precio; // sincroniza por si el admin cambio el precio
                 item.nombre = prod.nombre;
             } else {
-                carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1 });
+                window.carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1 });
             }
+            guardarCarrito();
             renderCarrito();
             abrirCarrito();
         }
 
         function quitarDelCarrito(id) {
-            carrito = carrito.filter(c => c.id !== id);
+            window.carrito = window.carrito.filter(c => c.id !== id);
+            guardarCarrito();
+            renderCarrito();
+        }
+
+        function vaciarCarrito() {
+            window.carrito = [];
+            guardarCarrito();
             renderCarrito();
         }
 
         function cambiarCantidad(id, delta) {
-            const item = carrito.find(c => c.id === id);
+            const item = window.carrito.find(c => c.id === id);
             if (!item) return;
             item.cantidad += delta;
             if (item.cantidad <= 0) {
                 quitarDelCarrito(id);
                 return;
             }
+            guardarCarrito();
             renderCarrito();
         }
 
         function totalCarrito() {
-            return carrito.reduce((sum, c) => sum + c.precio * c.cantidad, 0);
+            return window.carrito.reduce((sum, c) => sum + c.precio * c.cantidad, 0);
         }
 
         function renderCarrito() {
             const cont = document.getElementById('cartItems');
             const count = document.getElementById('cartCount');
             const totalEl = document.getElementById('cartTotal');
-            const unidades = carrito.reduce((s, c) => s + c.cantidad, 0);
+            const unidades = window.carrito.reduce((s, c) => s + c.cantidad, 0);
             count.textContent = unidades;
             totalEl.textContent = `S/ ${totalCarrito().toFixed(2)}`;
 
-            if (carrito.length === 0) {
+            if (window.carrito.length === 0) {
                 cont.innerHTML = '<p class="cart-empty">Tu carrito está vacío.<br>¡Agrega tus detalles favoritos! 💝</p>';
                 return;
             }
-            cont.innerHTML = carrito.map(c => `
+            cont.innerHTML = window.carrito.map(c => `
                 <div class="cart-item">
                     <div class="cart-item-info">
                         <h4>${c.nombre}</h4>
@@ -1307,14 +1360,22 @@
             document.getElementById('cartOverlay').classList.remove('show');
         }
 
-        // Boton "Comprar ya": agrega el producto y abre el carrito para finalizar
+        // Boton "Comprar ya": agrega el producto y abre el modal de finalizacion directamente
         function comprarDirecto(id) {
+            if (modoAdministrador) {
+                alert('Estás en modo Administrador. Para hacer una compra de prueba, presiona "Salir" primero.');
+                return;
+            }
             agregarAlCarrito(id);
+            cerrarCarrito();          // cierra el panel lateral para no tapar el modal
+            abrirModalCompra();       // abre directamente la finalizacion de compra
         }
 
         // Desde el carrito -> abrir modal de compra (el Cliente compra directamente, sin login)
         function irAComprar() {
-            if (carrito.length === 0) {
+            sincronizarCarrito();     // trae los precios/nombres vigentes del catalogo
+            renderCarrito();
+            if (window.carrito.length === 0) {
                 alert('Tu carrito está vacío. Agrega productos antes de comprar. 🛒');
                 return;
             }
@@ -1328,7 +1389,7 @@
 
         function abrirModalCompra() {
             const lista = document.getElementById('listaResumenCarrito');
-            lista.innerHTML = carrito.map(c => `<li>${c.nombre} x${c.cantidad} — S/ ${(c.precio * c.cantidad).toFixed(2)}</li>`).join('');
+            lista.innerHTML = window.carrito.map(c => `<li>${c.nombre} x${c.cantidad} — S/ ${(c.precio * c.cantidad).toFixed(2)}</li>`).join('');
             document.getElementById('totalResumenCarrito').textContent = `Total: S/ ${totalCarrito().toFixed(2)}`;
             document.getElementById('modalProductoNombre').textContent = 'Finaliza tu Compra 🛍️';
             document.getElementById('modalPedido').style.display = 'flex';
@@ -1340,18 +1401,31 @@
 
         function generarBoletaWhatsApp(e) {
             e.preventDefault();
-            if (carrito.length === 0) {
+            sincronizarCarrito(); // valida contra el catalogo vigente antes de cobrar
+            if (window.carrito.length === 0) {
                 alert('Tu carrito está vacío.');
+                cerrarModal();
                 return;
             }
-            const cliente = document.getElementById('clienteNombre').value;
-            const personalizacion = document.getElementById('personalizarNombre').value;
+            const cliente = document.getElementById('clienteNombre').value.trim();
+            const personalizacion = document.getElementById('personalizarNombre').value.trim();
             const dedicatoria = document.getElementById('dedicatoria').value || "Sin dedicatoria";
             const entrega = document.getElementById('metodoEntrega').value;
             const tieneFoto = document.getElementById('adjuntaFoto').value;
-            const total = totalCarrito();
 
-            const detalleProductos = carrito.map(c => `   • ${c.nombre} x${c.cantidad} = S/ ${(c.precio * c.cantidad).toFixed(2)}`).join('\n');
+            if (!cliente) {
+                alert('Por favor escribe tu nombre completo para continuar con la compra. 🙂');
+                document.getElementById('clienteNombre').focus();
+                return;
+            }
+            if (!personalizacion) {
+                alert('Indica el nombre o texto a personalizar en tu detalle.');
+                document.getElementById('personalizarNombre').focus();
+                return;
+            }
+
+            const total = totalCarrito();
+            const detalleProductos = window.carrito.map(c => `   • ${c.nombre} x${c.cantidad} = S/ ${(c.precio * c.cantidad).toFixed(2)}`).join('\n');
 
             const mensaje =
 `🧾 *BOLETA / RESUMEN DE COMPRA* 🧾
@@ -1369,17 +1443,28 @@ ${detalleProductos}
 ----------------------------------
 ¡Hola! Quisiera realizar esta compra.`;
 
-            window.open(`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`, '_blank');
+            // Registrar la compra como UN solo pedido consolidado para el administrador
+            registrarPedido(cliente, window.carrito, total, entrega, personalizacion, dedicatoria);
 
-            // Registrar cada producto del carrito como pedido para el administrador
-            carrito.forEach(c => registrarPedido(cliente, `${c.nombre} x${c.cantidad}`, c.precio, entrega));
+            // Confirmacion ANTES de vaciar el carrito: si WhatsApp no se abre, el cliente conserva su compra
+            const ventanaWA = window.open(`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`, '_blank');
 
-            carrito = [];
-            renderCarrito();
+            vaciarCarrito();
+            document.getElementById('formPedido').reset();
             cerrarModal();
+
+            if (!ventanaWA) {
+                alert('⚠️ Tu navegador bloqueó la pestaña de WhatsApp.\nHabilita las ventanas emergentes y vuelve a presionar "Finalizar Compra" (tu carrito aún tendrá los productos si cancelas este aviso).');
+                // Re-intentar una vez con enlace directo
+                window.location.href = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+            } else {
+                alert(`✅ ¡Compra registrada!\nTotal: S/ ${total.toFixed(2)}\nSe abrió WhatsApp con tu boleta para confirmar el pago y la entrega.`);
+            }
         }
 
         renderProductos(productos);
+        sincronizarCarrito(); // carrito guardado al dia con el catalogo actual
+        renderCarrito();      // pintar contador/panel desde localStorage
         aplicarPermisosPorRol(); // Estado inicial: Cliente automatico (compra sin login)
     </script>
 </body>
