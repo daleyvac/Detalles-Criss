@@ -1,69 +1,94 @@
-// API del catálogo: categorías y productos (lectura pública, escritura solo admin)
+// API del catálogo: categorías y productos.
+// Lectura pública; escritura solo admin. Compatible SQLite y SQL Server.
 const express = require('express');
-const db = require('../db');
+const db = require('../db-instance');
 const { requiereAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/categorias  -> pública
-router.get('/categorias', (req, res) => {
-  res.json(db.prepare('SELECT * FROM categorias ORDER BY nombre').all());
+// GET /api/categorias -> pública
+router.get('/categorias', async (req, res, next) => {
+  try { res.json(await db.getCategorias()); } catch (e) { next(e); }
 });
 
 // POST /api/categorias -> admin
-router.post('/categorias', requiereAdmin, (req, res) => {
-  const { nombre } = req.body || {};
-  if (!nombre || !nombre.trim()) return res.status(400).json({ error: 'Nombre requerido' });
+router.post('/categorias', requiereAdmin, async (req, res, next) => {
   try {
-    const r = db.prepare('INSERT INTO categorias (nombre) VALUES (?)').run(nombre.trim());
-    res.status(201).json({ id: r.lastInsertRowid, nombre: nombre.trim() });
-  } catch {
-    res.status(409).json({ error: 'La categoría ya existe' });
-  }
+    const nombre = (req.body?.nombre || '').trim();
+    if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+    const r = await db.createCategoria(nombre);
+    if (r.conflict) return res.status(409).json({ error: 'La categoría ya existe' });
+    res.status(201).json({ id: r.id, nombre });
+  } catch (e) { next(e); }
 });
 
-// DELETE /api/categorias/:id -> admin (bloqueado si tiene productos)
-router.delete('/categorias/:id', requiereAdmin, (req, res) => {
-  const enUso = db.prepare('SELECT COUNT(*) c FROM productos WHERE categoria_id = ?').get(req.params.id).c;
-  if (enUso > 0) return res.status(400).json({ error: 'No se puede eliminar: tiene productos asociados' });
-  db.prepare('DELETE FROM categorias WHERE id = ?').run(req.params.id);
-  res.json({ ok: true });
+// DELETE /api/categorias/:id -> admin (bloqueado si tiene productos activos)
+router.delete('/categorias/:id', requiereAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'id inválido' });
+    if (await db.categoriaEnUso(id))
+      return res.status(400).json({ error: 'No se puede eliminar: tiene productos asociados' });
+    await db.deleteCategoria(id);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
 });
 
 // GET /api/productos -> pública (con nombre de categoría)
-router.get('/productos', (req, res) => {
-  const rows = db.prepare(`
-    SELECT p.*, c.nombre AS categoria FROM productos p
-    JOIN categorias c ON c.id = p.categoria_id
-    ORDER BY c.nombre, p.nombre`).all();
-  res.json(rows);
+router.get('/productos', async (req, res, next) => {
+  try { res.json(await db.getProductos()); } catch (e) { next(e); }
 });
 
 // POST /api/productos -> admin
-router.post('/productos', requiereAdmin, (req, res) => {
-  const { nombre, categoria_id, precio, imagen = '', descripcion = '' } = req.body || {};
-  if (!nombre || !categoria_id || !(precio > 0))
-    return res.status(400).json({ error: 'nombre, categoria_id y precio (>0) son requeridos' });
-  const r = db.prepare('INSERT INTO productos (nombre, categoria_id, precio, imagen, descripcion) VALUES (?,?,?,?,?)')
-    .run(nombre.trim(), categoria_id, precio, imagen, descripcion);
-  res.status(201).json({ id: r.lastInsertRowid });
+router.post('/productos', requiereAdmin, async (req, res, next) => {
+  try {
+    const { nombre, categoria_id, precio, imagen = '', descripcion = '' } = req.body || {};
+    if (!nombre || !String(nombre).trim())
+      return res.status(400).json({ error: 'nombre es requerido' });
+    const catId = Number(categoria_id);
+    if (!Number.isInteger(catId) || !(await db.getCategorias()).some(c => c.id === catId))
+      return res.status(400).json({ error: 'categoria_id no existe' });
+    const p = Number(precio);
+    if (!(p > 0)) return res.status(400).json({ error: 'precio debe ser mayor a 0' });
+    const id = await db.createProducto({ nombre: String(nombre).trim(), categoria_id: catId, precio: p, imagen, descripcion });
+    res.status(201).json({ id });
+  } catch (e) { next(e); }
 });
 
 // PUT /api/productos/:id -> admin (precio, imagen, etc.)
-router.put('/productos/:id', requiereAdmin, (req, res) => {
-  const campos = ['nombre', 'categoria_id', 'precio', 'imagen', 'descripcion'];
-  const sets = [], vals = [];
-  for (const c of campos) if (c in (req.body || {})) { sets.push(`${c} = ?`); vals.push(req.body[c]); }
-  if (!sets.length) return res.status(400).json({ error: 'Sin campos para actualizar' });
-  vals.push(req.params.id);
-  db.prepare(`UPDATE productos SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
-  res.json({ ok: true });
+router.put('/productos/:id', requiereAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'id inválido' });
+    if (!(await db.getProducto(id))) return res.status(404).json({ error: 'Producto no encontrado' });
+
+    const body = req.body || {};
+    // validaciones defensivas de los campos editables
+    if ('precio' in body && !(Number(body.precio) > 0))
+      return res.status(400).json({ error: 'precio debe ser mayor a 0' });
+    if ('categoria_id' in body) {
+      const cid = Number(body.categoria_id);
+      if (!Number.isInteger(cid) || !(await db.getCategorias()).some(c => c.id === cid))
+        return res.status(400).json({ error: 'categoria_id no existe' });
+    }
+    if ('nombre' in body && !String(body.nombre || '').trim())
+      return res.status(400).json({ error: 'nombre no puede quedar vacío' });
+
+    const ok = await db.updateProducto(id, body);
+    if (!ok) return res.status(400).json({ error: 'Sin campos para actualizar' });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
 });
 
-// DELETE /api/productos/:id -> admin
-router.delete('/productos/:id', requiereAdmin, (req, res) => {
-  db.prepare('DELETE FROM productos WHERE id = ?').run(req.params.id);
-  res.json({ ok: true });
+// DELETE /api/productos/:id -> admin (borrado lógico en SQL Server)
+router.delete('/productos/:id', requiereAdmin, async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'id inválido' });
+    if (!(await db.getProducto(id))) return res.status(404).json({ error: 'Producto no encontrado' });
+    await db.deleteProducto(id);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
 });
 
 module.exports = router;

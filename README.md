@@ -87,3 +87,10 @@ con categorías, productos de ejemplo y el usuario admin.
 - Reemplazar tokens en memoria por JWT + expiración.
 - Servidor de archivos para subir imágenes reales (`multer` → `uploads/`).
 - Despliegue gratuito: Render/Railway (mismo `npm start`).
+
+## 🗄️ Activar SQL Server (local)
+
+1. Levantar el contenedor: `docker compose -f db/sqlserver/docker-compose.yml up -d`
+2. Ejecutar los scripts en orden (sqlcmd o SSMS): `01_crear_base_datos.sql` → `02_datos_semilla.sql` → `03_vistas_y_procedimientos.sql`
+3. En `.env`: `DB_DRIVER=mssql` y las variables `MSSQL_*` (ver `.env.example`)
+4. `npm start` → el banner mostrará `(BD: SQL Server)`
