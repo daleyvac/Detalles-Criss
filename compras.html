@@ -529,6 +529,189 @@
             gap: 1rem;
             margin-bottom: 1rem;
         }
+
+        /* ===== CARRITO DE COMPRAS ===== */
+        .cart-btn {
+            position: relative;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--primary-pink);
+            padding: 0.3rem 0.6rem;
+            transition: transform 0.3s ease;
+        }
+
+        .cart-btn:hover {
+            transform: scale(1.12);
+        }
+
+        .cart-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--primary-pink);
+            color: var(--white);
+            font-size: 0.7rem;
+            font-weight: 700;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-add-cart {
+            background-color: var(--primary-pink);
+            color: var(--white);
+            padding: 0.7rem 1.4rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulseGlow 2s infinite;
+        }
+
+        .btn-add-cart:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-3px) scale(1.02);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .card-actions .btn-primary, .card-actions .btn-add-cart {
+            padding: 0.6rem 1.1rem;
+            font-size: 0.85rem;
+        }
+
+        /* Panel lateral del carrito */
+        .cart-sidebar {
+            position: fixed;
+            top: 0;
+            right: -420px;
+            width: 400px;
+            max-width: 92vw;
+            height: 100vh;
+            background: var(--white);
+            box-shadow: -8px 0 25px rgba(252, 93, 165, 0.2);
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .cart-sidebar.open {
+            right: 0;
+        }
+
+        .cart-header {
+            padding: 1.3rem 1.5rem;
+            background: var(--soft-pink);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--accent-pink);
+        }
+
+        .cart-header h3 {
+            color: var(--primary-pink);
+            font-size: 1.2rem;
+        }
+
+        .cart-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.5rem;
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.9rem 0;
+            border-bottom: 1px dashed var(--accent-pink);
+        }
+
+        .cart-item-info h4 {
+            font-size: 0.95rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .cart-item-price {
+            color: var(--primary-pink);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .qty-btn {
+            background: var(--soft-pink);
+            border: 1px solid var(--primary-pink);
+            color: var(--primary-pink);
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .qty-btn:hover {
+            background: var(--primary-pink);
+            color: var(--white);
+        }
+
+        .cart-footer {
+            padding: 1.3rem 1.5rem;
+            border-top: 1px solid var(--accent-pink);
+            background: var(--soft-pink);
+        }
+
+        .cart-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .cart-total span:last-child {
+            color: var(--primary-pink);
+        }
+
+        .cart-empty {
+            text-align: center;
+            color: #999;
+            margin-top: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(2px);
+            z-index: 1050;
+        }
+
+        .overlay.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -549,9 +732,31 @@
                 <span class="role-tag" id="userRoleTag">Invitado</span>
                 <button class="btn-small" onclick="cerrarSesion()">Salir</button>
             </div>
+            <button class="cart-btn" onclick="abrirCarrito()" title="Ver carrito">
+                🛒<span class="cart-count" id="cartCount">0</span>
+            </button>
             <button class="btn-secondary" id="btnLoginNav" onclick="abrirModalLogin()">Ingresar</button>
         </div>
     </header>
+
+    <!-- ===== CARRITO DE COMPRAS (panel lateral) ===== -->
+    <div class="overlay" id="cartOverlay" onclick="cerrarCarrito()"></div>
+    <aside class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h3>🛒 Tu Carrito</h3>
+            <span class="close-btn" style="position:static;" onclick="cerrarCarrito()">&times;</span>
+        </div>
+        <div class="cart-items" id="cartItems">
+            <p class="cart-empty">Tu carrito está vacío.<br>¡Agrega tus detalles favoritos! 💝</p>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>Total:</span>
+                <span id="cartTotal">S/ 0.00</span>
+            </div>
+            <button class="btn-primary" style="width:100%; border-radius:12px; animation:none;" onclick="irAComprar()">✅ Comprar / Finalizar Pedido</button>
+        </div>
+    </aside>
 
     <section class="hero">
         <img src="Logotipo.jpg" alt="Detalles Criss & más" class="hero-logo-main">
@@ -619,17 +824,22 @@
             <div class="step-card">
                 <div class="step-number">1</div>
                 <h3>Elige tu detalle</h3>
-                <p>Selecciona tu producto favorito de nuestro catálogo.</p>
+                <p>Agrega tus productos favoritos al carrito 🛒 desde el catálogo.</p>
             </div>
             <div class="step-card">
                 <div class="step-number">2</div>
+                <h3>Ajusta tu carrito</h3>
+                <p>Revisa las cantidades y el total de tu compra en el panel lateral.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
                 <h3>Personalízalo</h3>
                 <p>Agrega nombres, fotos o dedicatorias especiales.</p>
             </div>
             <div class="step-card">
-                <div class="step-number">3</div>
-                <h3>Genera tu Boleta</h3>
-                <p>Envía tu pedido a nuestro WhatsApp listo para procesar.</p>
+                <div class="step-number">4</div>
+                <h3>Finaliza tu Compra</h3>
+                <p>Envía tu boleta con todos los productos a nuestro WhatsApp listo para procesar.</p>
             </div>
         </div>
     </section>
@@ -658,10 +868,16 @@
     <div class="modal" id="modalPedido">
         <div class="modal-content">
             <span class="close-btn" onclick="cerrarModal()">&times;</span>
-            <h3 style="color: var(--primary-pink); margin-bottom: 1rem;" id="modalProductoNombre">Personaliza tu Pedido</h3>
+            <h3 style="color: var(--primary-pink); margin-bottom: 1rem;" id="modalProductoNombre">Finaliza tu Compra</h3>
+
+            <!-- Resumen de productos del carrito -->
+            <div style="background: var(--soft-pink); border-radius: 12px; padding: 1rem; margin-bottom: 1.2rem; font-size: 0.9rem;">
+                <strong style="color: var(--primary-pink);">🛒 Productos en tu compra:</strong>
+                <ul id="listaResumenCarrito" style="margin-top: 0.5rem; padding-left: 1.2rem;"></ul>
+                <p style="text-align: right; font-weight: 700; color: var(--primary-pink); margin-top: 0.5rem;" id="totalResumenCarrito">Total: S/ 0.00</p>
+            </div>
+
             <form id="formPedido" onsubmit="generarBoletaWhatsApp(event)">
-                <input type="hidden" id="productoSeleccionado">
-                <input type="hidden" id="precioSeleccionado">
                 
                 <div class="form-group">
                     <label>Tu Nombre Completo:*</label>
@@ -689,7 +905,7 @@
                         <option value="Envío a Domicilio">Envío a Domicilio</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%; border-radius: 12px; margin-top: 0.5rem;">Enviar Boleta por WhatsApp</button>
+                <button type="submit" class="btn-primary" style="width: 100%; border-radius: 12px; margin-top: 0.5rem;">✅ Finalizar Compra por WhatsApp</button>
             </form>
         </div>
     </div>
@@ -870,7 +1086,10 @@
                         <div class="product-info">
                             <h3 class="product-title">${p.nombre}</h3>
                             <div class="product-price">S/ ${p.precio.toFixed(2)}</div>
-                            <button class="btn-primary" onclick="abrirModal('${p.nombre}', ${p.precio})">Personalizar</button>
+                            <div class="card-actions">
+                                <button class="btn-add-cart" onclick="agregarAlCarrito(${p.id})">🛒 Agregar</button>
+                                <button class="btn-primary" style="animation:none;" onclick="comprarDirecto(${p.id})">Comprar ya</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -887,10 +1106,113 @@
             }
         }
 
-        function abrirModal(nombre, precio) {
-            document.getElementById('modalProductoNombre').innerText = `Personalizar: ${nombre}`;
-            document.getElementById('productoSeleccionado').value = nombre;
-            document.getElementById('precioSeleccionado').value = precio;
+        // ===== CARRITO DE COMPRAS =====
+        let carrito = []; // [{ id, nombre, precio, cantidad }]
+
+        function agregarAlCarrito(id) {
+            const prod = productos.find(p => p.id === id);
+            if (!prod) return;
+            const item = carrito.find(c => c.id === id);
+            if (item) {
+                item.cantidad++;
+            } else {
+                carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1 });
+            }
+            renderCarrito();
+            abrirCarrito();
+        }
+
+        function quitarDelCarrito(id) {
+            carrito = carrito.filter(c => c.id !== id);
+            renderCarrito();
+        }
+
+        function cambiarCantidad(id, delta) {
+            const item = carrito.find(c => c.id === id);
+            if (!item) return;
+            item.cantidad += delta;
+            if (item.cantidad <= 0) {
+                quitarDelCarrito(id);
+                return;
+            }
+            renderCarrito();
+        }
+
+        function totalCarrito() {
+            return carrito.reduce((sum, c) => sum + c.precio * c.cantidad, 0);
+        }
+
+        function renderCarrito() {
+            const cont = document.getElementById('cartItems');
+            const count = document.getElementById('cartCount');
+            const totalEl = document.getElementById('cartTotal');
+            const unidades = carrito.reduce((s, c) => s + c.cantidad, 0);
+            count.textContent = unidades;
+            totalEl.textContent = `S/ ${totalCarrito().toFixed(2)}`;
+
+            if (carrito.length === 0) {
+                cont.innerHTML = '<p class="cart-empty">Tu carrito está vacío.<br>¡Agrega tus detalles favoritos! 💝</p>';
+                return;
+            }
+            cont.innerHTML = carrito.map(c => `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <h4>${c.nombre}</h4>
+                        <span class="cart-item-price">S/ ${c.precio.toFixed(2)} c/u</span>
+                    </div>
+                    <div class="qty-controls">
+                        <button class="qty-btn" onclick="cambiarCantidad(${c.id}, -1)">−</button>
+                        <span>${c.cantidad}</span>
+                        <button class="qty-btn" onclick="cambiarCantidad(${c.id}, 1)">+</button>
+                        <button class="btn-small" onclick="quitarDelCarrito(${c.id})">🗑</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function abrirCarrito() {
+            document.getElementById('cartSidebar').classList.add('open');
+            document.getElementById('cartOverlay').classList.add('show');
+        }
+
+        function cerrarCarrito() {
+            document.getElementById('cartSidebar').classList.remove('open');
+            document.getElementById('cartOverlay').classList.remove('show');
+        }
+
+        // Boton "Comprar ya": agrega el producto y abre el carrito para finalizar
+        function comprarDirecto(id) {
+            agregarAlCarrito(id);
+        }
+
+        // Desde el carrito -> abrir modal de compra (exige sesion de invitado)
+        function irAComprar() {
+            if (carrito.length === 0) {
+                alert('Tu carrito está vacío. Agrega productos antes de comprar. 🛒');
+                return;
+            }
+            if (!sesionActual) {
+                cerrarCarrito();
+                abrirModalLogin('invitado');
+                return;
+            }
+            if (sesionActual.rol === 'administrador') {
+                alert('Estás en modo Administrador. Para comprar como cliente, ingresa con un rol Invitado.');
+                return;
+            }
+            cerrarCarrito();
+            abrirModalCompra();
+        }
+
+        function abrirModalCompra() {
+            const lista = document.getElementById('listaResumenCarrito');
+            lista.innerHTML = carrito.map(c => `<li>${c.nombre} x${c.cantidad} — S/ ${(c.precio * c.cantidad).toFixed(2)}</li>`).join('');
+            document.getElementById('totalResumenCarrito').textContent = `Total: S/ ${totalCarrito().toFixed(2)}`;
+            document.getElementById('modalProductoNombre').textContent = 'Finaliza tu Compra 🛍️';
+            const campoNombre = document.getElementById('clienteNombre');
+            if (sesionActual && !campoNombre.value) {
+                campoNombre.value = sesionActual.usuario.charAt(0).toUpperCase() + sesionActual.usuario.slice(1);
+            }
             document.getElementById('modalPedido').style.display = 'flex';
         }
 
@@ -900,31 +1222,42 @@
 
         function generarBoletaWhatsApp(e) {
             e.preventDefault();
-            const producto = document.getElementById('productoSeleccionado').value;
-            const precio = document.getElementById('precioSeleccionado').value;
+            if (carrito.length === 0) {
+                alert('Tu carrito está vacío.');
+                return;
+            }
             const cliente = document.getElementById('clienteNombre').value;
             const personalizacion = document.getElementById('personalizarNombre').value;
             const dedicatoria = document.getElementById('dedicatoria').value || "Sin dedicatoria";
             const entrega = document.getElementById('metodoEntrega').value;
             const tieneFoto = document.getElementById('adjuntaFoto').value;
+            const total = totalCarrito();
 
-            const mensaje = 
-`🧾 *BOLETA / RESUMEN DE PEDIDO* 🧾
+            const detalleProductos = carrito.map(c => `   • ${c.nombre} x${c.cantidad} = S/ ${(c.precio * c.cantidad).toFixed(2)}`).join('\n');
+
+            const mensaje =
+`🧾 *BOLETA / RESUMEN DE COMPRA* 🧾
 *Detalles Criss & más*
 ----------------------------------
 👤 *Cliente:* ${cliente}
-🎁 *Producto:* ${producto}
-💰 *Total:* S/ ${parseFloat(precio).toFixed(2)}
+🛒 *Productos:*
+${detalleProductos}
+💰 *TOTAL:* S/ ${total.toFixed(2)}
 🚚 *Entrega:* ${entrega}
 ----------------------------------
 ✏️ *Personalizado:* ${personalizacion}
 💌 *Dedicatoria:* ${dedicatoria}
 📸 *Foto:* ${tieneFoto}
 ----------------------------------
-¡Hola! Quisiera realizar este pedido.`;
+¡Hola! Quisiera realizar esta compra.`;
 
             window.open(`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`, '_blank');
-            registrarPedido(cliente, producto, parseFloat(precio), entrega);
+
+            // Registrar cada producto del carrito como pedido para el administrador
+            carrito.forEach(c => registrarPedido(cliente, `${c.nombre} x${c.cantidad}`, c.precio, entrega));
+
+            carrito = [];
+            renderCarrito();
             cerrarModal();
         }
 
