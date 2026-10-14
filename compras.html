@@ -399,6 +399,136 @@
         .social-links a:hover {
             color: var(--primary-pink);
         }
+
+        /* ===== MODULOS DE ACCESO: INVITADO Y ADMINISTRADOR ===== */
+        .login-bar {
+            display: flex;
+            justify-content: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.85);
+            border: 2px solid var(--primary-pink);
+            color: var(--primary-pink);
+            padding: 0.7rem 1.6rem;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-pink);
+            color: var(--white);
+            transform: translateY(-2px);
+        }
+
+        .user-badge {
+            display: none;
+            align-items: center;
+            gap: 0.8rem;
+            background: var(--soft-pink);
+            border: 1px solid var(--accent-pink);
+            padding: 0.4rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .role-tag {
+            background: var(--primary-pink);
+            color: var(--white);
+            padding: 0.15rem 0.7rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-small {
+            background: transparent;
+            border: 1px solid #bbb;
+            color: #666;
+            padding: 0.2rem 0.8rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-small:hover {
+            border-color: var(--primary-pink);
+            color: var(--primary-pink);
+        }
+
+        /* Panel del modulo de administracion */
+        .admin-panel {
+            display: none;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .admin-panel h2 {
+            color: var(--primary-pink);
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .admin-section {
+            margin-bottom: 2rem;
+        }
+
+        .admin-section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid var(--accent-pink);
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .admin-table th, .admin-table td {
+            padding: 0.7rem;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        .admin-table th {
+            background: var(--soft-pink);
+            color: var(--primary-pink);
+            font-weight: 600;
+        }
+
+        .badge-estado {
+            padding: 0.2rem 0.7rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-pendiente { background: #fff3cd; color: #856404; }
+        .badge-confirmado { background: #d4edda; color: #155724; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -414,6 +544,12 @@
                 <li><a href="#como-pedir">Cómo Pedir</a></li>
                 <li><a href="#contacto">Contacto</a></li>
             </ul>
+            <div class="user-badge" id="userBadge">
+                <span id="userNameSession">Usuario</span>
+                <span class="role-tag" id="userRoleTag">Invitado</span>
+                <button class="btn-small" onclick="cerrarSesion()">Salir</button>
+            </div>
+            <button class="btn-secondary" id="btnLoginNav" onclick="abrirModalLogin()">Ingresar</button>
         </div>
     </header>
 
@@ -422,6 +558,44 @@
         <h1>Detalles que enamoran</h1>
         <p>Recuerdos que perduran. Regalos hechos a mano, chocotejas, cuadros personalizados y sorpresas únicas.</p>
         <a href="#catalogo" class="btn-primary">Ver Catálogo</a>
+        <div class="login-bar" id="loginBar">
+            <button class="btn-secondary" onclick="abrirModalLogin('invitado')">👤 Ingresar como Invitado</button>
+            <button class="btn-secondary" onclick="abrirModalLogin('administrador')">🔐 Ingresar como Administrador</button>
+        </div>
+    </section>
+
+    <!-- ===== MODULO ADMINISTRADOR ===== -->
+    <section class="admin-panel" id="adminPanel">
+        <h2>⚙️ Panel de Administración</h2>
+
+        <div class="admin-section">
+            <h3>Gestión de Productos</h3>
+            <div class="form-row">
+                <input type="text" id="nuevoProdNombre" placeholder="Nombre del producto" style="padding:0.7rem; border:1px solid #e0e0e0; border-radius:10px;">
+                <select id="nuevoProdCategoria" style="padding:0.7rem; border:1px solid #e0e0e0; border-radius:10px;">
+                    <option value="cuadros">Cuadros Personalizados</option>
+                    <option value="chocotejas">Chocotejas</option>
+                    <option value="sorpresa">Regalos Sorpresa</option>
+                    <option value="arreglos">Arreglos a Mano</option>
+                    <option value="juguetes">Juguetes y Peluches</option>
+                </select>
+                <input type="number" id="nuevoProdPrecio" placeholder="Precio S/" step="0.10" min="0" style="padding:0.7rem; border:1px solid #e0e0e0; border-radius:10px;">
+                <button class="btn-primary" style="animation:none; border-radius:12px;" onclick="agregarProducto()">➕ Agregar</button>
+            </div>
+            <table class="admin-table">
+                <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Acciones</th></tr></thead>
+                <tbody id="tablaProductosAdmin"></tbody>
+            </table>
+        </div>
+
+        <div class="admin-section">
+            <h3>Pedidos Recibidos</h3>
+            <table class="admin-table">
+                <thead><tr><th>Cliente</th><th>Producto</th><th>Total</th><th>Entrega</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody id="tablaPedidosAdmin"></tbody>
+            </table>
+            <p id="sinPedidos" style="color:#888; font-size:0.9rem; margin-top:0.5rem;">Aún no hay pedidos registrados.</p>
+        </div>
     </section>
 
     <section class="catalog-container" id="catalogo">
@@ -459,6 +633,27 @@
             </div>
         </div>
     </section>
+
+    <!-- ===== MODULO LOGIN (INVITADO / ADMINISTRADOR) ===== -->
+    <div class="modal" id="modalLogin">
+        <div class="modal-content">
+            <span class="close-btn" onclick="cerrarModalLogin()">&times;</span>
+            <h3 style="color: var(--primary-pink); margin-bottom: 1rem;" id="loginTitulo">Iniciar Sesión</h3>
+            <form id="formLogin" onsubmit="iniciarSesion(event)">
+                <input type="hidden" id="loginRol" value="invitado">
+                <div class="form-group">
+                    <label>Usuario:*</label>
+                    <input type="text" id="loginUsuario" required placeholder="Ej. maria / admin">
+                </div>
+                <div class="form-group" id="grupoPassword">
+                    <label>Contraseña:*</label>
+                    <input type="password" id="loginPassword" placeholder="Ingresa tu contraseña">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; border-radius: 12px; margin-top: 0.5rem;">Ingresar</button>
+            </form>
+            <p id="loginError" style="display:none; color:#d9534f; font-size:0.85rem; margin-top:0.8rem; text-align:center;">❌ Credenciales incorrectas. Verifica tu usuario y contraseña.</p>
+        </div>
+    </div>
 
     <div class="modal" id="modalPedido">
         <div class="modal-content">
@@ -521,6 +716,149 @@
         ];
 
         const numeroWhatsApp = "51900000000"; // Reemplazar con tu número de WhatsApp real
+
+        // ===== MODULOS DE ACCESO: ROLES =====
+        // Usuarios registrados por rol (demo - conectar a backend en produccion)
+        const usuariosRegistrados = {
+            invitado: [
+                { usuario: "maria", password: "1234" },
+                { usuario: "carlos", password: "1234" }
+            ],
+            administrador: [
+                { usuario: "admin", password: "admin123" }
+            ]
+        };
+
+        let sesionActual = null; // { usuario, rol }
+        let pedidosRegistrados = [];
+
+        function abrirModalLogin(rol = 'invitado') {
+            document.getElementById('loginRol').value = rol;
+            document.getElementById('loginTitulo').innerText = rol === 'administrador' ? '🔐 Acceso Administrador' : '👤 Acceso Invitado';
+            document.getElementById('grupoPassword').style.display = 'block';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('loginUsuario').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('modalLogin').style.display = 'flex';
+        }
+
+        function cerrarModalLogin() {
+            document.getElementById('modalLogin').style.display = 'none';
+        }
+
+        function iniciarSesion(e) {
+            e.preventDefault();
+            const rol = document.getElementById('loginRol').value;
+            const usuario = document.getElementById('loginUsuario').value.trim().toLowerCase();
+            const password = document.getElementById('loginPassword').value;
+
+            const valido = usuariosRegistrados[rol].some(u => u.usuario === usuario && u.password === password);
+
+            if (!valido) {
+                document.getElementById('loginError').style.display = 'block';
+                return;
+            }
+
+            sesionActual = { usuario, rol };
+            aplicarPermisosPorRol();
+            cerrarModalLogin();
+        }
+
+        function cerrarSesion() {
+            sesionActual = null;
+            aplicarPermisosPorRol();
+        }
+
+        // Permisos segun el rol: cada modulo muestra solo lo que su rol puede ver/editar
+        function aplicarPermisosPorRol() {
+            const badge = document.getElementById('userBadge');
+            const btnNav = document.getElementById('btnLoginNav');
+            const loginBar = document.getElementById('loginBar');
+            const adminPanel = document.getElementById('adminPanel');
+
+            if (sesionActual) {
+                badge.style.display = 'flex';
+                btnNav.style.display = 'none';
+                loginBar.style.display = 'none';
+                document.getElementById('userNameSession').innerText = `👋 ${sesionActual.usuario}`;
+                document.getElementById('userRoleTag').innerText = sesionActual.rol === 'administrador' ? 'Administrador' : 'Invitado';
+
+                if (sesionActual.rol === 'administrador') {
+                    adminPanel.style.display = 'block';
+                    renderTablaProductosAdmin();
+                    renderTablaPedidosAdmin();
+                } else {
+                    adminPanel.style.display = 'none'; // Invitado NO ve el panel de administracion
+                }
+            } else {
+                badge.style.display = 'none';
+                btnNav.style.display = 'inline-block';
+                loginBar.style.display = 'flex';
+                adminPanel.style.display = 'none';
+            }
+            renderProductos(productos);
+        }
+
+        // ===== FUNCIONES MODULO ADMINISTRADOR =====
+        function renderTablaProductosAdmin() {
+            const tbody = document.getElementById('tablaProductosAdmin');
+            tbody.innerHTML = productos.map(p => `
+                <tr>
+                    <td>${p.nombre}</td>
+                    <td>${p.categoria}</td>
+                    <td>S/ ${p.precio.toFixed(2)}</td>
+                    <td><button class="btn-small" onclick="eliminarProducto(${p.id})">🗑 Eliminar</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function agregarProducto() {
+            const nombre = document.getElementById('nuevoProdNombre').value.trim();
+            const categoria = document.getElementById('nuevoProdCategoria').value;
+            const precio = parseFloat(document.getElementById('nuevoProdPrecio').value);
+            if (!nombre || isNaN(precio) || precio <= 0) {
+                alert('Completa el nombre y un precio válido.');
+                return;
+            }
+            productos.push({ id: Date.now(), nombre, categoria, precio });
+            document.getElementById('nuevoProdNombre').value = '';
+            document.getElementById('nuevoProdPrecio').value = '';
+            renderTablaProductosAdmin();
+            renderProductos(productos);
+        }
+
+        function eliminarProducto(id) {
+            const idx = productos.findIndex(p => p.id === id);
+            if (idx > -1) productos.splice(idx, 1);
+            renderTablaProductosAdmin();
+            renderProductos(productos);
+        }
+
+        function renderTablaPedidosAdmin() {
+            const tbody = document.getElementById('tablaPedidosAdmin');
+            const sinPedidos = document.getElementById('sinPedidos');
+            sinPedidos.style.display = pedidosRegistrados.length === 0 ? 'block' : 'none';
+            tbody.innerHTML = pedidosRegistrados.map((pd, i) => `
+                <tr>
+                    <td>${pd.cliente}</td>
+                    <td>${pd.producto}</td>
+                    <td>S/ ${pd.precio.toFixed(2)}</td>
+                    <td>${pd.entrega}</td>
+                    <td><span class="badge-estado ${pd.estado === 'Confirmado' ? 'badge-confirmado' : 'badge-pendiente'}">${pd.estado}</span></td>
+                    <td>${pd.estado === 'Pendiente' ? `<button class="btn-small" onclick="confirmarPedido(${i})">✔ Confirmar</button>` : ''}</td>
+                </tr>
+            `).join('');
+        }
+
+        function confirmarPedido(i) {
+            pedidosRegistrados[i].estado = 'Confirmado';
+            renderTablaPedidosAdmin();
+        }
+
+        function registrarPedido(cliente, producto, precio, entrega) {
+            pedidosRegistrados.push({ cliente, producto, precio, entrega, estado: 'Pendiente' });
+            if (sesionActual && sesionActual.rol === 'administrador') renderTablaPedidosAdmin();
+        }
 
         function renderProductos(lista) {
             const grid = document.getElementById('grid-productos');
@@ -586,10 +924,12 @@
 ¡Hola! Quisiera realizar este pedido.`;
 
             window.open(`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`, '_blank');
+            registrarPedido(cliente, producto, parseFloat(precio), entrega);
             cerrarModal();
         }
 
         renderProductos(productos);
+        aplicarPermisosPorRol(); // Estado inicial: sin sesion -> solo modulo de invitado visible
     </script>
 </body>
 </html>
