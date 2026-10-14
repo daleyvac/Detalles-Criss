@@ -246,6 +246,14 @@
             font-weight: 600;
             text-align: center;
             padding: 1rem;
+            overflow: hidden;
+        }
+
+        .product-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
         }
 
         .product-info {
@@ -727,15 +735,15 @@
                 <li><a href="#como-pedir">Cómo Pedir</a></li>
                 <li><a href="#contacto">Contacto</a></li>
             </ul>
-            <div class="user-badge" id="userBadge">
-                <span id="userNameSession">Usuario</span>
-                <span class="role-tag" id="userRoleTag">Invitado</span>
-                <button class="btn-small" onclick="cerrarSesion()">Salir</button>
+            <div class="user-badge" id="userBadge" style="display:flex;">
+                <span id="userNameSession">Cliente</span>
+                <span class="role-tag" id="userRoleTag">Cliente</span>
+                <button class="btn-small" id="btnAdminNav" onclick="abrirModalLogin('administrador')">🔐 Admin</button>
+                <button class="btn-small" id="btnSalirAdmin" onclick="salirAdministrador()" style="display:none;">Salir</button>
             </div>
             <button class="cart-btn" onclick="abrirCarrito()" title="Ver carrito">
                 🛒<span class="cart-count" id="cartCount">0</span>
             </button>
-            <button class="btn-secondary" id="btnLoginNav" onclick="abrirModalLogin()">Ingresar</button>
         </div>
     </header>
 
@@ -763,10 +771,6 @@
         <h1>Detalles que enamoran</h1>
         <p>Recuerdos que perduran. Regalos hechos a mano, chocotejas, cuadros personalizados y sorpresas únicas.</p>
         <a href="#catalogo" class="btn-primary">Ver Catálogo</a>
-        <div class="login-bar" id="loginBar">
-            <button class="btn-secondary" onclick="abrirModalLogin('invitado')">👤 Ingresar como Invitado</button>
-            <button class="btn-secondary" onclick="abrirModalLogin('administrador')">🔐 Ingresar como Administrador</button>
-        </div>
     </section>
 
     <!-- ===== MODULO ADMINISTRADOR ===== -->
@@ -774,22 +778,29 @@
         <h2>⚙️ Panel de Administración</h2>
 
         <div class="admin-section">
-            <h3>Gestión de Productos</h3>
+            <h3>Gestión de Productos (precios, imágenes y categorías)</h3>
             <div class="form-row">
                 <input type="text" id="nuevoProdNombre" placeholder="Nombre del producto" style="padding:0.7rem; border:1px solid #e0e0e0; border-radius:10px;">
-                <select id="nuevoProdCategoria" style="padding:0.7rem; border:1px solid #e0e0e0; border-radius:10px;">
-                    <option value="cuadros">Cuadros Personalizados</option>
-                    <option value="chocotejas">Chocotejas</option>
-                    <option value="sorpresa">Regalos Sorpresa</option>
-                    <option value="arreglos">Arreglos a Mano</option>
-                    <option value="juguetes">Juguetes y Peluches</option>
-                </select>
+                <select id="nuevoProdCategoria" style="padding:0.7rem; border:1px solid #e0e0e0; border-radius:10px;"></select>
                 <input type="number" id="nuevoProdPrecio" placeholder="Precio S/" step="0.10" min="0" style="padding:0.7rem; border:1px solid #e0e0e0; border-radius:10px;">
-                <button class="btn-primary" style="animation:none; border-radius:12px;" onclick="agregarProducto()">➕ Agregar</button>
+                <input type="text" id="nuevoProdImagen" placeholder="URL de imagen (opcional)" style="padding:0.7rem; border:1px solid #e0e0e0; border-radius:10px;">
+                <button class="btn-primary" style="animation:none; border-radius:12px;" onclick="agregarProducto()">➕ Agregar Producto</button>
             </div>
             <table class="admin-table">
-                <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th>Imagen</th><th>Acciones</th></tr></thead>
                 <tbody id="tablaProductosAdmin"></tbody>
+            </table>
+        </div>
+
+        <div class="admin-section">
+            <h3>Gestión de Categorías (agregar apartados de compra manualmente)</h3>
+            <div class="form-row">
+                <input type="text" id="nuevaCatNombre" placeholder="Nombre de la nueva categoría (Ej. Velas Aromatizadas)" style="padding:0.7rem; border:1px solid #e0e0e0; border-radius:10px;">
+                <button class="btn-primary" style="animation:none; border-radius:12px;" onclick="agregarCategoria()">🏷️ Agregar Categoría</button>
+            </div>
+            <table class="admin-table">
+                <thead><tr><th>Categoría</th><th>Productos</th><th>Acciones</th></tr></thead>
+                <tbody id="tablaCategoriasAdmin"></tbody>
             </table>
         </div>
 
@@ -806,14 +817,7 @@
     <section class="catalog-container" id="catalogo">
         <h2 class="section-title">Nuestros Detalles</h2>
         
-        <div class="filter-buttons">
-            <button class="filter-btn active" onclick="filterProducts('todos')">Todos</button>
-            <button class="filter-btn" onclick="filterProducts('cuadros')">Cuadros Personalizados</button>
-            <button class="filter-btn" onclick="filterProducts('chocotejas')">Chocotejas</button>
-            <button class="filter-btn" onclick="filterProducts('sorpresa')">Regalos Sorpresa</button>
-            <button class="filter-btn" onclick="filterProducts('arreglos')">Arreglos a Mano</button>
-            <button class="filter-btn" onclick="filterProducts('juguetes')">Juguetes y Peluches</button>
-        </div>
+        <div class="filter-buttons" id="filtrosCategoria"></div>
 
         <div class="products-grid" id="grid-productos"></div>
     </section>
@@ -844,16 +848,16 @@
         </div>
     </section>
 
-    <!-- ===== MODULO LOGIN (INVITADO / ADMINISTRADOR) ===== -->
+    <!-- ===== MODULO LOGIN (SOLO ADMINISTRADOR) ===== -->
     <div class="modal" id="modalLogin">
         <div class="modal-content">
             <span class="close-btn" onclick="cerrarModalLogin()">&times;</span>
-            <h3 style="color: var(--primary-pink); margin-bottom: 1rem;" id="loginTitulo">Iniciar Sesión</h3>
+            <h3 style="color: var(--primary-pink); margin-bottom: 1rem;" id="loginTitulo">🔐 Acceso Administrador</h3>
             <form id="formLogin" onsubmit="iniciarSesion(event)">
-                <input type="hidden" id="loginRol" value="invitado">
+                <input type="hidden" id="loginRol" value="administrador">
                 <div class="form-group">
                     <label>Usuario:*</label>
-                    <input type="text" id="loginUsuario" required placeholder="Ej. maria / admin">
+                    <input type="text" id="loginUsuario" required placeholder="Ej. admin">
                 </div>
                 <div class="form-group" id="grupoPassword">
                     <label>Contraseña:*</label>
@@ -922,36 +926,55 @@
     </footer>
 
     <script>
-        const productos = [
-            { id: 1, nombre: "Cuadro Fotográfico Personalizado", categoria: "cuadros", precio: 45.00 },
-            { id: 2, nombre: "Caja de Chocotejas Artesanales", categoria: "chocotejas", precio: 30.00 },
-            { id: 3, nombre: "Box Sorpresa Especial", categoria: "sorpresa", precio: 85.00 },
-            { id: 4, nombre: "Arreglo Floral Hecho a Mano", categoria: "arreglos", precio: 60.00 },
-            { id: 5, nombre: "Peluche + Detalle Personalizado", categoria: "juguetes", precio: 55.00 },
-            { id: 6, nombre: "Detalle Tallado Personalizado", categoria: "cuadros", precio: 40.00 }
+        // ===== CATALOGO DINAMICO (editable por el Administrador, persistido en localStorage) =====
+        const KEY_CATALOGO = 'criss_catalogo_v1';
+
+        let categorias = [
+            { id: "cuadros", nombre: "Cuadros Personalizados" },
+            { id: "chocotejas", nombre: "Chocotejas" },
+            { id: "sorpresa", nombre: "Regalos Sorpresa" },
+            { id: "arreglos", nombre: "Arreglos a Mano" },
+            { id: "juguetes", nombre: "Juguetes y Peluches" }
         ];
+
+        let productos = [
+            { id: 1, nombre: "Cuadro Fotográfico Personalizado", categoria: "cuadros", precio: 45.00, imagen: "" },
+            { id: 2, nombre: "Caja de Chocotejas Artesanales", categoria: "chocotejas", precio: 30.00, imagen: "" },
+            { id: 3, nombre: "Box Sorpresa Especial", categoria: "sorpresa", precio: 85.00, imagen: "" },
+            { id: 4, nombre: "Arreglo Floral Hecho a Mano", categoria: "arreglos", precio: 60.00, imagen: "" },
+            { id: 5, nombre: "Peluche + Detalle Personalizado", categoria: "juguetes", precio: 55.00, imagen: "" },
+            { id: 6, nombre: "Detalle Tallado Personalizado", categoria: "cuadros", precio: 40.00, imagen: "" }
+        ];
+
+        // Cargar catalogo guardado (ediciones del admin: precios, imagenes, productos y categorias nuevas)
+        try {
+            const guardado = JSON.parse(localStorage.getItem(KEY_CATALOGO));
+            if (guardado && Array.isArray(guardado.productos) && Array.isArray(guardado.categorias)) {
+                productos = guardado.productos;
+                categorias = guardado.categorias;
+            }
+        } catch (e) { /* usa los datos por defecto */ }
+
+        function guardarCatalogo() {
+            localStorage.setItem(KEY_CATALOGO, JSON.stringify({ productos, categorias }));
+        }
 
         const numeroWhatsApp = "51900000000"; // Reemplazar con tu número de WhatsApp real
 
-        // ===== MODULOS DE ACCESO: ROLES =====
-        // Usuarios registrados por rol (demo - conectar a backend en produccion)
+        // ===== ROLES =====
+        // El rol Invitado se elimina: todo visitante es CLIENTE automaticamente desde el inicio
+        // y puede comprar sin iniciar sesion. Solo existe login para el ADMINISTRADOR.
         const usuariosRegistrados = {
-            invitado: [
-                { usuario: "maria", password: "1234" },
-                { usuario: "carlos", password: "1234" }
-            ],
             administrador: [
                 { usuario: "admin", password: "admin123" }
             ]
         };
 
-        let sesionActual = null; // { usuario, rol }
+        let modoAdministrador = false; // false = Cliente (estado inicial automatico)
         let pedidosRegistrados = [];
 
-        function abrirModalLogin(rol = 'invitado') {
+        function abrirModalLogin(rol = 'administrador') {
             document.getElementById('loginRol').value = rol;
-            document.getElementById('loginTitulo').innerText = rol === 'administrador' ? '🔐 Acceso Administrador' : '👤 Acceso Invitado';
-            document.getElementById('grupoPassword').style.display = 'block';
             document.getElementById('loginError').style.display = 'none';
             document.getElementById('loginUsuario').value = '';
             document.getElementById('loginPassword').value = '';
@@ -968,62 +991,153 @@
             const usuario = document.getElementById('loginUsuario').value.trim().toLowerCase();
             const password = document.getElementById('loginPassword').value;
 
-            const valido = usuariosRegistrados[rol].some(u => u.usuario === usuario && u.password === password);
+            const valido = (usuariosRegistrados[rol] || []).some(u => u.usuario === usuario && u.password === password);
 
             if (!valido) {
                 document.getElementById('loginError').style.display = 'block';
                 return;
             }
 
-            sesionActual = { usuario, rol };
+            modoAdministrador = true;
             aplicarPermisosPorRol();
             cerrarModalLogin();
         }
 
-        function cerrarSesion() {
-            sesionActual = null;
+        function salirAdministrador() {
+            modoAdministrador = false;
             aplicarPermisosPorRol();
         }
 
-        // Permisos segun el rol: cada modulo muestra solo lo que su rol puede ver/editar
+        // Permisos segun el rol: Cliente compra directamente; Admin gestiona la tienda
         function aplicarPermisosPorRol() {
-            const badge = document.getElementById('userBadge');
-            const btnNav = document.getElementById('btnLoginNav');
-            const loginBar = document.getElementById('loginBar');
+            const roleTag = document.getElementById('userRoleTag');
+            const nameSession = document.getElementById('userNameSession');
+            const btnAdminNav = document.getElementById('btnAdminNav');
+            const btnSalir = document.getElementById('btnSalirAdmin');
             const adminPanel = document.getElementById('adminPanel');
 
-            if (sesionActual) {
-                badge.style.display = 'flex';
-                btnNav.style.display = 'none';
-                loginBar.style.display = 'none';
-                document.getElementById('userNameSession').innerText = `👋 ${sesionActual.usuario}`;
-                document.getElementById('userRoleTag').innerText = sesionActual.rol === 'administrador' ? 'Administrador' : 'Invitado';
-
-                if (sesionActual.rol === 'administrador') {
-                    adminPanel.style.display = 'block';
-                    renderTablaProductosAdmin();
-                    renderTablaPedidosAdmin();
-                } else {
-                    adminPanel.style.display = 'none'; // Invitado NO ve el panel de administracion
-                }
+            if (modoAdministrador) {
+                roleTag.innerText = 'Administrador';
+                nameSession.innerText = '👋 Admin';
+                btnAdminNav.style.display = 'none';
+                btnSalir.style.display = 'inline-block';
+                adminPanel.style.display = 'block';
+                renderSelectCategorias();
+                renderTablaProductosAdmin();
+                renderTablaCategoriasAdmin();
+                renderTablaPedidosAdmin();
             } else {
-                badge.style.display = 'none';
-                btnNav.style.display = 'inline-block';
-                loginBar.style.display = 'flex';
-                adminPanel.style.display = 'none';
+                roleTag.innerText = 'Cliente';
+                nameSession.innerText = '👋 Cliente';
+                btnAdminNav.style.display = 'inline-block';
+                btnSalir.style.display = 'none';
+                adminPanel.style.display = 'none'; // Cliente NO ve el panel de administracion
             }
+            renderFiltros();
             renderProductos(productos);
         }
 
         // ===== FUNCIONES MODULO ADMINISTRADOR =====
+
+        // Renderiza los filtros del catalogo (un boton por categoria, gestionables por el admin)
+        function renderFiltros() {
+            const cont = document.getElementById('filtrosCategoria');
+            cont.innerHTML = `<button class="filter-btn active" onclick="filterProducts('todos', this)">Todos</button>` +
+                categorias.map(c => `<button class="filter-btn" onclick="filterProducts('${c.id}', this)">${c.nombre}</button>`).join('');
+        }
+
+        // Select de categorias del formulario de nuevo producto
+        function renderSelectCategorias() {
+            const sel = document.getElementById('nuevoProdCategoria');
+            sel.innerHTML = categorias.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+        }
+
+        function nombreCategoria(id) {
+            const c = categorias.find(cat => cat.id === id);
+            return c ? c.nombre : id;
+        }
+
         function renderTablaProductosAdmin() {
             const tbody = document.getElementById('tablaProductosAdmin');
             tbody.innerHTML = productos.map(p => `
                 <tr>
                     <td>${p.nombre}</td>
-                    <td>${p.categoria}</td>
-                    <td>S/ ${p.precio.toFixed(2)}</td>
+                    <td>${nombreCategoria(p.categoria)}</td>
+                    <td><input type="number" step="0.10" min="0" value="${p.precio.toFixed(2)}" style="width:90px; padding:0.35rem; border:1px solid var(--accent-pink); border-radius:8px;" onchange="cambiarPrecioProducto(${p.id}, this.value)" title="Edita y presiona Enter para guardar el nuevo precio"></td>
+                    <td>
+                        <input type="text" value="${p.imagen || ''}" placeholder="URL imagen" style="width:140px; padding:0.35rem; border:1px solid var(--accent-pink); border-radius:8px;" onchange="cambiarImagenProducto(${p.id}, this.value)" title="Pega la URL y presiona Enter">
+                    </td>
                     <td><button class="btn-small" onclick="eliminarProducto(${p.id})">🗑 Eliminar</button></td>
+                </tr>
+            `).join('');
+        }
+
+        // Cambio de PRECIO manual desde la tabla del admin
+        function cambiarPrecioProducto(id, nuevoValor) {
+            const prod = productos.find(p => p.id === id);
+            if (!prod) return;
+            const precio = parseFloat(nuevoValor);
+            if (isNaN(precio) || precio <= 0) {
+                alert('Precio inválido. Ingresa un número mayor a 0.');
+                renderTablaProductosAdmin();
+                return;
+            }
+            prod.precio = precio;
+            guardarCatalogo();
+            renderTablaProductosAdmin();
+            renderProductos(productos);
+        }
+
+        // Cambio de IMAGEN manual desde la tabla del admin
+        function cambiarImagenProducto(id, url) {
+            const prod = productos.find(p => p.id === id);
+            if (!prod) return;
+            prod.imagen = url.trim();
+            guardarCatalogo();
+            renderTablaProductosAdmin();
+            renderProductos(productos);
+        }
+
+        // AGREGAR CATEGORIA (nuevo apartado de compra) manualmente
+        function agregarCategoria() {
+            const input = document.getElementById('nuevaCatNombre');
+            const nombre = input.value.trim();
+            if (!nombre) {
+                alert('Escribe el nombre de la nueva categoría.');
+                return;
+            }
+            const id = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-');
+            if (categorias.some(c => c.id === id)) {
+                alert('Esa categoría ya existe.');
+                return;
+            }
+            categorias.push({ id, nombre });
+            input.value = '';
+            guardarCatalogo();
+            renderSelectCategorias();
+            renderTablaCategoriasAdmin();
+            renderFiltros();
+        }
+
+        function eliminarCategoria(id) {
+            if (productos.some(p => p.categoria === id)) {
+                alert('No se puede eliminar: hay productos en esta categoría. Muévelos o elimínalos primero.');
+                return;
+            }
+            categorias = categorias.filter(c => c.id !== id);
+            guardarCatalogo();
+            renderSelectCategorias();
+            renderTablaCategoriasAdmin();
+            renderFiltros();
+        }
+
+        function renderTablaCategoriasAdmin() {
+            const tbody = document.getElementById('tablaCategoriasAdmin');
+            tbody.innerHTML = categorias.map(c => `
+                <tr>
+                    <td>${c.nombre}</td>
+                    <td>${productos.filter(p => p.categoria === c.id).length}</td>
+                    <td><button class="btn-small" onclick="eliminarCategoria('${c.id}')">🗑 Eliminar</button></td>
                 </tr>
             `).join('');
         }
@@ -1032,21 +1146,29 @@
             const nombre = document.getElementById('nuevoProdNombre').value.trim();
             const categoria = document.getElementById('nuevoProdCategoria').value;
             const precio = parseFloat(document.getElementById('nuevoProdPrecio').value);
+            const imagen = document.getElementById('nuevoProdImagen').value.trim();
             if (!nombre || isNaN(precio) || precio <= 0) {
                 alert('Completa el nombre y un precio válido.');
                 return;
             }
-            productos.push({ id: Date.now(), nombre, categoria, precio });
+            productos.push({ id: Date.now(), nombre, categoria, precio, imagen });
             document.getElementById('nuevoProdNombre').value = '';
             document.getElementById('nuevoProdPrecio').value = '';
+            document.getElementById('nuevoProdImagen').value = '';
+            guardarCatalogo();
             renderTablaProductosAdmin();
+            renderTablaCategoriasAdmin();
             renderProductos(productos);
         }
 
         function eliminarProducto(id) {
             const idx = productos.findIndex(p => p.id === id);
             if (idx > -1) productos.splice(idx, 1);
+            carrito = carrito.filter(c => c.id !== id); // limpiar del carrito si estaba
+            renderCarrito();
+            guardarCatalogo();
             renderTablaProductosAdmin();
+            renderTablaCategoriasAdmin();
             renderProductos(productos);
         }
 
@@ -1073,16 +1195,19 @@
 
         function registrarPedido(cliente, producto, precio, entrega) {
             pedidosRegistrados.push({ cliente, producto, precio, entrega, estado: 'Pendiente' });
-            if (sesionActual && sesionActual.rol === 'administrador') renderTablaPedidosAdmin();
+            if (modoAdministrador) renderTablaPedidosAdmin();
         }
 
         function renderProductos(lista) {
             const grid = document.getElementById('grid-productos');
             grid.innerHTML = '';
             lista.forEach(p => {
+                const imagenHTML = p.imagen
+                    ? `<img src="${p.imagen}" alt="${p.nombre}" onerror="this.parentElement.innerHTML='[ ${p.nombre} ]'">`
+                    : `[ ${p.nombre} ]`;
                 grid.innerHTML += `
                     <div class="product-card">
-                        <div class="product-img">[ ${p.nombre} ]</div>
+                        <div class="product-img">${imagenHTML}</div>
                         <div class="product-info">
                             <h3 class="product-title">${p.nombre}</h3>
                             <div class="product-price">S/ ${p.precio.toFixed(2)}</div>
@@ -1096,9 +1221,9 @@
             });
         }
 
-        function filterProducts(cat) {
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+        function filterProducts(cat, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
             if (cat === 'todos') {
                 renderProductos(productos);
             } else {
@@ -1115,6 +1240,8 @@
             const item = carrito.find(c => c.id === id);
             if (item) {
                 item.cantidad++;
+                item.precio = prod.precio; // sincroniza por si el admin cambio el precio
+                item.nombre = prod.nombre;
             } else {
                 carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, cantidad: 1 });
             }
@@ -1185,19 +1312,14 @@
             agregarAlCarrito(id);
         }
 
-        // Desde el carrito -> abrir modal de compra (exige sesion de invitado)
+        // Desde el carrito -> abrir modal de compra (el Cliente compra directamente, sin login)
         function irAComprar() {
             if (carrito.length === 0) {
                 alert('Tu carrito está vacío. Agrega productos antes de comprar. 🛒');
                 return;
             }
-            if (!sesionActual) {
-                cerrarCarrito();
-                abrirModalLogin('invitado');
-                return;
-            }
-            if (sesionActual.rol === 'administrador') {
-                alert('Estás en modo Administrador. Para comprar como cliente, ingresa con un rol Invitado.');
+            if (modoAdministrador) {
+                alert('Estás en modo Administrador. Para hacer una compra de prueba, presiona "Salir" primero.');
                 return;
             }
             cerrarCarrito();
@@ -1209,10 +1331,6 @@
             lista.innerHTML = carrito.map(c => `<li>${c.nombre} x${c.cantidad} — S/ ${(c.precio * c.cantidad).toFixed(2)}</li>`).join('');
             document.getElementById('totalResumenCarrito').textContent = `Total: S/ ${totalCarrito().toFixed(2)}`;
             document.getElementById('modalProductoNombre').textContent = 'Finaliza tu Compra 🛍️';
-            const campoNombre = document.getElementById('clienteNombre');
-            if (sesionActual && !campoNombre.value) {
-                campoNombre.value = sesionActual.usuario.charAt(0).toUpperCase() + sesionActual.usuario.slice(1);
-            }
             document.getElementById('modalPedido').style.display = 'flex';
         }
 
@@ -1262,7 +1380,7 @@ ${detalleProductos}
         }
 
         renderProductos(productos);
-        aplicarPermisosPorRol(); // Estado inicial: sin sesion -> solo modulo de invitado visible
+        aplicarPermisosPorRol(); // Estado inicial: Cliente automatico (compra sin login)
     </script>
 </body>
 </html>
