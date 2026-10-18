@@ -82,15 +82,32 @@ con categorías, productos de ejemplo y el usuario admin.
 | GET | /api/pedidos | admin | Ver pedidos |
 | PATCH | /api/pedidos/:id/estado | admin | Confirmar/anular |
 
+## 🔀 Flujo de compra actual (implementado)
+1. El cliente agrega productos al carrito (persistido en localStorage).
+2. Botón único **"🛒 Agregar al carrito"** en cada tarjeta (se eliminó "Comprar ya": cumplía doble función).
+3. En el modal, el botón **"✅ Confirmar compra"** registra el pedido vía `POST /api/pedidos` (el servidor recalcula precios desde la BD), genera el **comprobante PDF** y abre **WhatsApp con el enlace público** `/api/pedidos/:id/comprobante.pdf`.
+4. El panel del admin lista los pedidos reales de la BD.
+
 ## 📌 Próximos pasos sugeridos (cuando quieras escalar)
-- Subir el frontend a consumir la API (hoy usa localStorage; el backend ya está listo).
 - Reemplazar tokens en memoria por JWT + expiración.
 - Servidor de archivos para subir imágenes reales (`multer` → `uploads/`).
 - Despliegue gratuito: Render/Railway (mismo `npm start`).
 
-## 🗄️ Activar SQL Server (local)
+## 🗄️ Activar SQL Server (local) — sin Docker (recomendado)
 
-1. Levantar el contenedor: `docker compose -f db/sqlserver/docker-compose.yml up -d`
-2. Ejecutar los scripts en orden (sqlcmd o SSMS): `01_crear_base_datos.sql` → `02_datos_semilla.sql` → `03_vistas_y_procedimientos.sql`
-3. En `.env`: `DB_DRIVER=mssql` y las variables `MSSQL_*` (ver `.env.example`)
-4. `npm start` → el banner mostrará `(BD: SQL Server)`
+Requisito: tener **SQL Server Developer Edition** instalado localmente ([descarga gratuita](https://www.microsoft.com/sql-server/sql-server-downloads)) o una instancia accesible.
+
+1. Conectarte con tu usuario de SQL (p. ej. `sa`) y ejecutar los scripts en orden:
+   `db/sqlserver/01_crear_base_datos.sql` → `02_datos_semilla.sql` → `03_vistas_y_procedimientos.sql`
+   (vía SSMS, Azure Data Studio o `sqlcmd -S localhost -U sa -P TU_CLAVE -i archivo.sql`)
+2. En `.env`: `DB_DRIVER=mssql` y las variables `MSSQL_*` apuntando a tu instancia (ver `.env.example`).
+3. `npm start` → el banner mostrará `(BD: SQL Server)`.
+
+<details>
+<summary>Opcional: usar Docker si lo prefieres</summary>
+
+```bash
+docker compose -f db/sqlserver/docker-compose.yml up -d   # crea la instancia en localhost:1433
+# luego repite los pasos 1-3 de arriba
+```
+</details>

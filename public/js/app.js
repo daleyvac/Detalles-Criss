@@ -1,7 +1,6 @@
         // ===== CATALOGO DINAMICO (editable por el Administrador, persistido en localStorage) =====
         const KEY_CATALOGO = 'criss_catalogo_v1';
         const KEY_CARRITO = 'criss_carrito_v1';
-        const KEY_PEDIDOS = 'criss_pedidos_v1';
 
         let categorias = [
             { id: "cuadros", nombre: "Cuadros Personalizados" },
@@ -69,23 +68,44 @@
 
         function iniciarSesion(e) {
             e.preventDefault();
-            const rol = document.getElementById('loginRol').value;
             const usuario = document.getElementById('loginUsuario').value.trim().toLowerCase();
             const password = document.getElementById('loginPassword').value;
 
-            const valido = (usuariosRegistrados[rol] || []).some(u => u.usuario === usuario && u.password === password);
-
-            if (!valido) {
-                document.getElementById('loginError').style.display = 'block';
-                return;
-            }
-
-            modoAdministrador = true;
-            aplicarPermisosPorRol();
-            cerrarModalLogin();
+            // Login contra el backend (bcrypt + token). Si el backend no esta
+            // disponible (p. ej. abriendo el HTML con file://), se usa la
+            // credencial local como respaldo de modo demo.
+            fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, password })
+            })
+            .then(r => r.ok ? r.json() : Promise.reject(new Error('credenciales invalidas')))
+            .then(s => {
+                window.tokenAdmin = s.token;
+                modoAdministrador = true;
+                aplicarPermisosPorRol();
+                cerrarModalLogin();
+            })
+            .catch(() => {
+                const valido = (usuariosRegistrados.administrador || []).some(u => u.usuario === usuario && u.password === password);
+                if (!valido) {
+                    document.getElementById('loginError').style.display = 'block';
+                    return;
+                }
+                modoAdministrador = true;
+                aplicarPermisosPorRol();
+                cerrarModalLogin();
+            });
         }
 
         function salirAdministrador() {
+            if (window.tokenAdmin) {
+                fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + window.tokenAdmin }
+                }).catch(() => {});
+                window.tokenAdmin = null;
+            }
             modoAdministrador = false;
             aplicarPermisosPorRol();
         }
@@ -256,15 +276,39 @@
             renderProductos(productos);
         }
 
+        let _listaPedidosVista = [];
         function renderTablaPedidosAdmin() {
             const tbody = document.getElementById('tablaPedidosAdmin');
             const sinPedidos = document.getElementById('sinPedidos');
-            sinPedidos.style.display = pedidosRegistrados.length === 0 ? 'block' : 'none';
-            tbody.innerHTML = pedidosRegistrados.map((pd, i) => `
+
+            // Fuente primaria: la base de datos del servidor (pedidos reales).
+            fetch('/api/pedidos', { headers: window.tokenAdmin ? { 'Authorization': 'Bearer ' + window.tokenAdmin } : {} })
+                .then(r => r.ok ? r.json() : Promise.reject(new Error()))
+                .then(lista => {
+                    const pedidos = lista.map(p => ({
+                        cliente: p.cliente,
+                        producto: (p.detalle || []).map(d => `${d.nombre} x${d.cantidad}`).join(', '),
+                        precio: Number(p.total),
+                        entrega: p.entrega || '',
+                        estado: p.estado,
+                        id: p.id,
+                        _fuente: 'bd'
+                    }));
+                    pintarPedidos(pedidos.length ? pedidos : pedidosRegistrados);
+                })
+                .catch(() => pintarPedidos(pedidosRegistrados)); // respaldo local (modo demo)
+        }
+
+        function pintarPedidos(lista) {
+            const tbody = document.getElementById('tablaPedidosAdmin');
+            const sinPedidos = document.getElementById('sinPedidos');
+            _listaPedidosVista = lista;
+            sinPedidos.style.display = lista.length === 0 ? 'block' : 'none';
+            tbody.innerHTML = lista.map((pd, i) => `
                 <tr>
                     <td>${pd.cliente}</td>
                     <td>${pd.producto}</td>
-                    <td>S/ ${pd.precio.toFixed(2)}</td>
+                    <td>S/ ${Number(pd.precio).toFixed(2)}</td>
                     <td>${pd.entrega}</td>
                     <td><span class="badge-estado ${pd.estado === 'Confirmado' ? 'badge-confirmado' : 'badge-pendiente'}">${pd.estado}</span></td>
                     <td>${pd.estado === 'Pendiente' ? `<button class="btn-small" onclick="confirmarPedido(${i})">✔ Confirmar</button>` : ''}</td>
@@ -273,7 +317,19 @@
         }
 
         function confirmarPedido(i) {
-            pedidosRegistrados[i].estado = 'Confirmado';
+            const pd = (_listaPedidosVista || [])[i];
+            if (!pd) return;
+            if (pd._fuente === 'bd' && window.tokenAdmin) {
+                fetch(`/api/pedidos/${pd.id}/estado`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + window.tokenAdmin },
+                    body: JSON.stringify({ estado: 'Confirmado' })
+                }).then(r => r.ok ? renderTablaPedidosAdmin() : Promise.reject())
+                  .catch(() => alert('No se pudo confirmar el pedido en el servidor.'));
+                return;
+            }
+            const idx = pedidosRegistrados.findIndex(x => x === pd || (x.cliente === pd.cliente && x.producto === pd.producto));
+            if (idx >= 0) pedidosRegistrados[idx].estado = 'Confirmado';
             guardarPedidos();
             renderTablaPedidosAdmin();
         }
@@ -309,8 +365,7 @@
                             <h3 class="product-title">${p.nombre}</h3>
                             <div class="product-price">S/ ${p.precio.toFixed(2)}</div>
                             <div class="card-actions">
-                                <button class="btn-add-cart" onclick="agregarAlCarrito(${p.id})">🛒 Agregar</button>
-                                <button class="btn-primary" style="animation:none;" onclick="comprarDirecto(${p.id})">Comprar ya</button>
+                                <button class="btn-add-cart" onclick="agregarAlCarrito(${p.id})">🛒 Agregar al carrito</button>
                             </div>
                         </div>
                     </div>
@@ -432,17 +487,6 @@
             document.getElementById('cartOverlay').classList.remove('show');
         }
 
-        // Boton "Comprar ya": agrega el producto y abre el modal de finalizacion directamente
-        function comprarDirecto(id) {
-            if (modoAdministrador) {
-                alert('Estás en modo Administrador. Para hacer una compra de prueba, presiona "Salir" primero.');
-                return;
-            }
-            agregarAlCarrito(id);
-            cerrarCarrito();          // cierra el panel lateral para no tapar el modal
-            abrirModalCompra();       // abre directamente la finalizacion de compra
-        }
-
         // Desde el carrito -> abrir modal de compra (el Cliente compra directamente, sin login)
         function irAComprar() {
             sincronizarCarrito();     // trae los precios/nombres vigentes del catalogo
@@ -483,7 +527,7 @@
             const personalizacion = document.getElementById('personalizarNombre').value.trim();
             const dedicatoria = document.getElementById('dedicatoria').value || "Sin dedicatoria";
             const entrega = document.getElementById('metodoEntrega').value;
-            const tieneFoto = document.getElementById('adjuntaFoto').value;
+            
 
             if (!cliente) {
                 alert('Por favor escribe tu nombre completo para continuar con la compra. 🙂');
@@ -497,43 +541,63 @@
             }
 
             const total = totalCarrito();
-            const detalleProductos = window.carrito.map(c => `   • ${c.nombre} x${c.cantidad} = S/ ${(c.precio * c.cantidad).toFixed(2)}`).join('\n');
+            const origen = (window.location.protocol === 'file:') ? '' : window.location.origin;
 
-            const mensaje =
-`🧾 *BOLETA / RESUMEN DE COMPRA* 🧾
+            // 1) CONFIRMAR LA COMPRA: el servidor registra el pedido y genera el comprobante PDF.
+            //    El enlace del PDF se comparte por WhatsApp (opcion D de la especificacion).
+            fetch('/api/pedidos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cliente,
+                    dedicatoria,
+                    entrega,
+                    items: window.carrito.map(c => ({ id: c.id, cantidad: c.cantidad }))
+                })
+            })
+            .then(r => r.ok ? r.json() : r.json().then(e => Promise.reject(new Error(e.error || 'No se pudo registrar el pedido'))))
+            .then(pedido => {
+                const urlPdf = `${origen}/api/pedidos/${pedido.id}/comprobante.pdf`;
+                const detalleProductos = window.carrito.map(c => `   • ${c.nombre} x${c.cantidad} = S/ ${(c.precio * c.cantidad).toFixed(2)}`).join('\n');
+
+                const mensaje =
+`🧾 *COMPROBANTE DE PAGO* 🧾
 *Detalles Criss & más*
 ----------------------------------
 👤 *Cliente:* ${cliente}
 🛒 *Productos:*
 ${detalleProductos}
-💰 *TOTAL:* S/ ${total.toFixed(2)}
+💰 *TOTAL:* S/ ${Number(pedido.total).toFixed(2)}
 🚚 *Entrega:* ${entrega}
 ----------------------------------
 ✏️ *Personalizado:* ${personalizacion}
 💌 *Dedicatoria:* ${dedicatoria}
-📸 *Foto:* ${tieneFoto}
 ----------------------------------
-¡Hola! Quisiera realizar esta compra.`;
+📄 *Comprobante en PDF:* ${urlPdf}
+¡Hola! Acabo de confirmar esta compra, adjunto mi comprobante.`;
 
-            // Registrar la compra como UN solo pedido consolidado para el administrador
-            registrarPedido(cliente, window.carrito, total, entrega, personalizacion, dedicatoria);
+                // Registro local como respaldo para el panel del admin
+                registrarPedido(cliente, window.carrito, Number(pedido.total), entrega, personalizacion, dedicatoria);
 
-            // Confirmacion ANTES de vaciar el carrito: si WhatsApp no se abre, el cliente conserva su compra
-            const ventanaWA = window.open(`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`, '_blank');
+                // 2) Redirigir a WhatsApp con el enlace al PDF
+                const ventanaWA = window.open(`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`, '_blank');
 
-            vaciarCarrito();
-            document.getElementById('formPedido').reset();
-            cerrarModal();
+                vaciarCarrito();
+                document.getElementById('formPedido').reset();
+                cerrarModal();
 
-            if (!ventanaWA) {
-                alert('⚠️ Tu navegador bloqueó la pestaña de WhatsApp.\nHabilita las ventanas emergentes y vuelve a presionar "Finalizar Compra" (tu carrito aún tendrá los productos si cancelas este aviso).');
-                // Re-intentar una vez con enlace directo
-                window.location.href = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
-            } else {
-                alert(`✅ ¡Compra registrada!\nTotal: S/ ${total.toFixed(2)}\nSe abrió WhatsApp con tu boleta para confirmar el pago y la entrega.`);
-            }
+                if (!ventanaWA) {
+                    window.location.href = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensaje)}`;
+                } else {
+                    alert(`✅ ¡Compra confirmada!\nTotal: S/ ${Number(pedido.total).toFixed(2)}\nPuedes descargar tu comprobante PDF en:\n${urlPdf}\nSe abrió WhatsApp con el enlace para enviarlo al vendedor.`);
+                }
+            })
+            .catch(err => {
+                alert(`⚠️ No se pudo confirmar la compra: ${err.message}\nTu carrito sigue intacto. Reintenta.`);
+            });
         }
 
         renderProductos(productos);
         sincronizarCarrito(); // carrito guardado al dia con el catalogo actual
         renderCarrito();      // pintar contador/panel desde localStorage
+        aplicarPermisosPorRol(); // Estado inicial: Cliente automatico (compra sin login)
