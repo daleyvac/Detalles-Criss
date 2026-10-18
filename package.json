@@ -13,6 +13,10 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node tests/api.test.js"
+    "test": "node tests/api.test.js",
+    "test:bdd": "cucumber-js"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^12.9.0"
   }
 }

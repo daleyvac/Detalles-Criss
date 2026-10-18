@@ -140,6 +140,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
       rows.forEach(p => p.detalle = JSON.parse(p.detalle));
       return rows;
     },
+    async getPedido(id) {
+      const p = db.prepare('SELECT * FROM pedidos WHERE id = ?').get(id);
+      if (!p) return null;
+      p.detalle = JSON.parse(p.detalle);
+      return p;
+    },
     async actualizarEstadoPedido(id, estado) {
       if (!['pendiente', 'confirmado', 'anulado'].includes(estado)) return { invalid: 'estado' };
       const r = db.prepare('UPDATE pedidos SET estado = ? WHERE id = ?').run(estado, id);

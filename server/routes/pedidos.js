@@ -32,6 +32,21 @@ router.get('/', requiereAdmin, async (req, res, next) => {
   try { res.json(await db.getPedidos()); } catch (e) { next(e); }
 });
 
+// GET /api/pedidos/:id/comprobante.pdf -> público: descarga del comprobante
+router.get('/:id/comprobante.pdf', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id < 1) return res.status(400).json({ error: 'id inválido' });
+    const pedido = await db.getPedido(id);
+    if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+    const { generarComprobantePdf } = require('../pdf');
+    const pdf = generarComprobantePdf(pedido);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="comprobante-${id}.pdf"`);
+    res.send(pdf);
+  } catch (e) { next(e); }
+});
+
 // PATCH /api/pedidos/:id/estado -> admin (confirmar/anular)
 router.patch('/:id/estado', requiereAdmin, async (req, res, next) => {
   try {

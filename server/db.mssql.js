@@ -104,6 +104,14 @@ module.exports = {
     const r = await exec('sp_listar_pedidos');
     return r.recordset.map(p => ({ ...p, total: Number(p.total), detalle: JSON.parse(p.detalle) }));
   },
+  async getPedido(id) {
+    const r = await query('SELECT p.*, (SELECT JSON_QUERY((SELECT i.nombre, i.cantidad, i.precio_unitario AS precio, i.subtotal FROM dbo.pedido_items i WHERE i.pedido_id = p.id FOR JSON PATH))) AS detalle FROM dbo.pedidos p WHERE p.id = @id', { id });
+    const p = r[0];
+    if (!p) return null;
+    p.detalle = p.detalle ? JSON.parse(p.detalle) : [];
+    p.total = Number(p.total);
+    return p;
+  },
   async actualizarEstadoPedido(id, estado) {
     try { await exec('sp_actualizar_estado_pedido', { id, estado }); return true; }
     catch (e) {
