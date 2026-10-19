@@ -21,8 +21,9 @@ function generarComprobantePdf(pedido) {
   let ops = '';
 
   ops += textLine(50, y, 20, 'TIENDA ONLINE - COMPROBANTE DE PAGO', true); y -= 28;
+  ops += textLine(50, y, 11, `Codigo: ${pedido.codigo || ('PDD-' + pedido.id)}`); y -= 16;
   ops += textLine(50, y, 11, `Pedido Nro: ${pedido.id}`); y -= 16;
-  ops += textLine(50, y, 11, `Fecha: ${String(pedido.fecha_creacion || pedido.fecha || '').slice(0, 19).replace('T', ' ')}`); y -= 16;
+  ops += textLine(50, y, 11, `Fecha: ${String(pedido.creado_en || pedido.fecha_creacion || pedido.fecha || '').slice(0, 19).replace('T', ' ')}`); y -= 16;
   ops += textLine(50, y, 11, `Cliente: ${pedido.cliente}`); y -= 16;
   if (pedido.telefono) { ops += textLine(50, y, 11, `Telefono: ${pedido.telefono}`); y -= 16; }
   if (pedido.entrega)  { ops += textLine(50, y, 11, `Entrega: ${pedido.entrega}`); y -= 16; }

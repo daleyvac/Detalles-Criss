@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS productos (
 CREATE TABLE IF NOT EXISTS pedidos (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   cliente TEXT NOT NULL,
+  codigo TEXT UNIQUE,          -- código público del comprobante PDF
   telefono TEXT DEFAULT '',
   detalle TEXT NOT NULL,      -- JSON: [{id,nombre,cantidad,precio,subtotal}]
   total REAL NOT NULL,
@@ -48,6 +49,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password_hash TEXT NOT NULL,
   rol TEXT NOT NULL DEFAULT 'admin'
 );`);
+
+  // ---- migración ligera: columna codigo en pedidos (BDs creadas antes de v1.0) ----
+  const colsPedidos = db.prepare('PRAGMA table_info(pedidos)').all().map(c => c.name);
+  if (!colsPedidos.includes('codigo')) {
+    db.prepare('ALTER TABLE pedidos ADD COLUMN codigo TEXT UNIQUE').run();
+  }
 
   // ---- semilla idempotente ----
   if (!db.prepare('SELECT COUNT(*) c FROM categorias').get().c) {
@@ -130,10 +137,12 @@ CREATE TABLE IF NOT EXISTS usuarios (
         total += subtotal;
       }
       total = +total.toFixed(2);
-      const r = db.prepare(`INSERT INTO pedidos (cliente, telefono, detalle, total, dedicatoria, entrega)
-                            VALUES (?,?,?,?,?,?)`)
-        .run(cliente, telefono || '', JSON.stringify(detalle), total, dedicatoria || '', entrega || '');
-      return { id: Number(r.lastInsertRowid), total };
+      // Código público del comprobante (usado en el enlace que se comparte por WhatsApp)
+      const codigo = 'PDD-' + String(Date.now()).slice(-8) + '-' + String(Math.floor(Math.random() * 900) + 100);
+      const r = db.prepare(`INSERT INTO pedidos (cliente, telefono, detalle, total, dedicatoria, entrega, codigo)
+                            VALUES (?,?,?,?,?,?,?)`)
+        .run(cliente, telefono || '', JSON.stringify(detalle), total, dedicatoria || '', entrega || '', codigo);
+      return { id: Number(r.lastInsertRowid), total, codigo };
     },
     async getPedidos() {
       const rows = db.prepare('SELECT * FROM pedidos ORDER BY id DESC').all();

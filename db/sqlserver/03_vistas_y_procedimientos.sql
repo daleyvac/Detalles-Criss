@@ -64,13 +64,15 @@ BEGIN
         VALUES (LTRIM(RTRIM(@cliente)), @telefono, @total, @dedicatoria, @entrega);
 
         DECLARE @pedido_id INT = CAST(SCOPE_IDENTITY() AS INT);
+        DECLARE @codigo NVARCHAR(40) = 'PDD-' + FORMAT(SYSDATETIME(), 'yyyyMMddHHmmssfff') + '-' + CAST(@pedido_id AS NVARCHAR(10));
+        UPDATE dbo.pedidos SET codigo = @codigo WHERE id = @pedido_id;
 
         INSERT INTO dbo.pedido_items (pedido_id, producto_id, nombre, cantidad, precio)
         SELECT @pedido_id, p.id, p.nombre, s.cantidad, p.precio
         FROM @sel s JOIN dbo.productos p ON p.id = s.producto_id;
 
         COMMIT;
-        SELECT @pedido_id AS id, @total AS total;
+        SELECT @pedido_id AS id, @total AS total, @codigo AS codigo;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK;
