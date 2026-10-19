@@ -98,7 +98,7 @@ module.exports = {
       entrega: entrega || '', items_json: JSON.stringify(items)
     });
     const row = r.recordset[0];
-    return { id: row.id, total: Number(row.total) };
+    return { id: row.id, total: Number(row.total), codigo: row.codigo };
   },
   async getPedidos() {
     const r = await exec('sp_listar_pedidos');

@@ -80,10 +80,16 @@ CREATE TABLE dbo.pedidos (
     total       DECIMAL(10,2) NOT NULL CONSTRAINT CK_ped_total CHECK (total >= 0),
     dedicatoria NVARCHAR(500) NOT NULL CONSTRAINT DF_ped_ded DEFAULT '',
     entrega     NVARCHAR(500) NOT NULL CONSTRAINT DF_ped_ent DEFAULT '',
+    codigo      NVARCHAR(40)  NULL CONSTRAINT UQ_ped_codigo UNIQUE, -- código público del comprobante PDF
     estado      NVARCHAR(20)  NOT NULL CONSTRAINT DF_ped_estado DEFAULT 'pendiente'
                 CONSTRAINT CK_ped_estado CHECK (estado IN ('pendiente','confirmado','anulado')),
     creado_en   DATETIME2 NOT NULL CONSTRAINT DF_ped_creado DEFAULT SYSDATETIME()
 );
+GO
+
+-- migración: agregar columna codigo si la tabla ya existía sin ella
+IF COL_LENGTH('dbo.pedidos', 'codigo') IS NULL
+    ALTER TABLE dbo.pedidos ADD codigo NVARCHAR(40) NULL CONSTRAINT UQ_ped_codigo UNIQUE;
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_pedidos_estado' AND object_id=OBJECT_ID('dbo.pedidos'))
